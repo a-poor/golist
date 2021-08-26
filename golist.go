@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -13,6 +14,8 @@ const (
 	ArrowRightAlt = "❱"
 )
 
+const SpinnerChars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+
 type TaskStatus int
 
 const (
@@ -21,6 +24,13 @@ const (
 	TaskCompleted
 	TaskFailed
 )
+
+var StatusMsg = map[TaskStatus]string{
+	TaskNotStarted: "Not Started",
+	TaskInProgress: "In Progress",
+	TaskCompleted:  "Completed",
+	TaskFailed:     "Failed",
+}
 
 type List struct {
 	Tasks []Task
@@ -50,24 +60,69 @@ func (s *Spinner) GetAndIncrement() string {
 	return c
 }
 
+type status struct {
+	sync.RWMutex
+	status  TaskStatus
+	spinner Spinner
+}
+
+func (s *status) Get() TaskStatus {
+	s.RLock()
+	defer s.RUnlock()
+	return s.status
+}
+
+func (s *status) Set(status TaskStatus) {
+	s.Lock()
+	defer s.Unlock()
+	s.status = status
+}
+
+func (s *status) GetStatusChar(status TaskStatus) string {
+	switch status {
+	case TaskNotStarted:
+		return "➜"
+	case TaskInProgress:
+		return s.spinner.GetAndIncrement()
+	case TaskCompleted:
+		return "✔️"
+	case TaskFailed:
+		return "✗"
+	default:
+		return "?"
+	}
+}
+
+func (s *status) GetMessage() string {
+	stat := s.Get()
+	return fmt.Sprintf("\033[1K\r%s %s", s.GetStatusChar(stat), StatusMsg[stat])
+}
+
+func (s *status) PrintStatus() {
+	fmt.Print(s.GetMessage())
+}
+
 func main() {
-	// fmt.Print("Starting")
-	// time.Sleep(time.Second * 2)
-	// ClearScreen()
-	// fmt.Println("Done")
 
-	i := 0
-	spinnerChars := []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-	words := []string{"Hello", "World", "!"}
-
-	for {
-		// fmt.Printf("\r%c %s", spinnerChars[i], words[i%len(words)])
-		fmt.Printf("\033[1K\r%c %s", spinnerChars[i], words[i%len(words)])
-
-		time.Sleep(time.Millisecond * 100)
-		// time.Sleep(time.Second * 1)
-
-		i = (i + 1) % len(spinnerChars)
+	s := status{
+		spinner: Spinner{Chars: []rune(SpinnerChars)},
 	}
 
+	go func() {
+		time.Sleep(time.Second)
+		s.Set(TaskInProgress)
+		time.Sleep(time.Second)
+		s.Set(TaskCompleted)
+	}()
+
+	for {
+		s.PrintStatus()
+		time.Sleep(time.Millisecond * 100)
+		if s.Get() == TaskCompleted {
+			s.PrintStatus()
+			fmt.Println()
+			break
+		}
+	}
+	// time.Sleep(time.Second)
 }
