@@ -82,15 +82,15 @@ func (s *status) Set(status TaskStatus) {
 func (s *status) GetStatusChar(status TaskStatus) string {
 	switch status {
 	case TaskNotStarted:
-		return "\033[30;1m➜\033[0m"
+		return fmtBlack("➜")
 	case TaskInProgress:
-		return "\033[33;1m" + s.spinner.GetAndIncrement() + "\033[0m"
+		return fmtYellow(s.spinner.GetAndIncrement())
 	case TaskCompleted:
-		return "\033[32;1m✔️\033[0m"
+		return fmtGreen("✔️")
 	case TaskFailed:
-		return "\033[31;1m✗\033[0m"
+		return fmtRed("✗")
 	default:
-		return "?"
+		return "-"
 	}
 }
 
@@ -111,24 +111,24 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(time.Second)
-		s.Set(TaskInProgress)
-		time.Sleep(time.Second)
-		if rand.Float64() > 0.5 {
-			s.Set(TaskCompleted)
-		} else {
-			s.Set(TaskFailed)
-		}
-	}()
-
-	for {
-		s.PrintStatus()
-		time.Sleep(time.Millisecond * 100)
-		if stat := s.Get(); stat == TaskCompleted || stat == TaskFailed {
+		for {
 			s.PrintStatus()
-			fmt.Println()
-			break
+			time.Sleep(time.Millisecond * 100)
+			if stat := s.Get(); stat == TaskCompleted || stat == TaskFailed {
+				s.PrintStatus()
+				fmt.Println()
+				break
+			}
 		}
+		time.Sleep(time.Second)
+	}()
+	time.Sleep(time.Second)
+	s.Set(TaskInProgress)
+	time.Sleep(time.Second)
+	if rand.Float64() > 0.5 {
+		s.Set(TaskCompleted)
+	} else {
+		s.Set(TaskFailed)
 	}
-	// time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 100)
 }
