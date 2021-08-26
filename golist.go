@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -81,13 +82,13 @@ func (s *status) Set(status TaskStatus) {
 func (s *status) GetStatusChar(status TaskStatus) string {
 	switch status {
 	case TaskNotStarted:
-		return "➜"
+		return "\033[30;1m➜\033[0m"
 	case TaskInProgress:
-		return s.spinner.GetAndIncrement()
+		return "\033[33;1m" + s.spinner.GetAndIncrement() + "\033[0m"
 	case TaskCompleted:
-		return "✔️"
+		return "\033[32;1m✔️\033[0m"
 	case TaskFailed:
-		return "✗"
+		return "\033[31;1m✗\033[0m"
 	default:
 		return "?"
 	}
@@ -103,6 +104,7 @@ func (s *status) PrintStatus() {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 
 	s := status{
 		spinner: Spinner{Chars: []rune(SpinnerChars)},
@@ -112,13 +114,17 @@ func main() {
 		time.Sleep(time.Second)
 		s.Set(TaskInProgress)
 		time.Sleep(time.Second)
-		s.Set(TaskCompleted)
+		if rand.Float64() > 0.5 {
+			s.Set(TaskCompleted)
+		} else {
+			s.Set(TaskFailed)
+		}
 	}()
 
 	for {
 		s.PrintStatus()
 		time.Sleep(time.Millisecond * 100)
-		if s.Get() == TaskCompleted {
+		if stat := s.Get(); stat == TaskCompleted || stat == TaskFailed {
 			s.PrintStatus()
 			fmt.Println()
 			break
