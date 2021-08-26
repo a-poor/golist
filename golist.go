@@ -5,40 +5,49 @@ import (
 	"time"
 )
 
-func SetCursor(line, column int) {
-	fmt.Printf("\033[%d;%dH", line, column)
+const (
+	EmojiCheck    = "✔️"
+	EmojiX        = "✖"
+	EmojiXAlt     = "✗"
+	ArrowRight    = "➜"
+	ArrowRightAlt = "❱"
+)
+
+type TaskStatus int
+
+const (
+	TaskNotStarted TaskStatus = iota
+	TaskInProgress
+	TaskCompleted
+	TaskFailed
+)
+
+type List struct {
+	Tasks []Task
 }
 
-func MoveCursorUp(n int) {
-	fmt.Printf("\033[%dA", n)
+type Task struct {
+	Name     string
+	Subtasks []Task
 }
 
-func MoveCursorDown(n int) {
-	fmt.Printf("\033[%dB", n)
+type Spinner struct {
+	Chars        []rune
+	currentIndex int
 }
 
-func MoveCursorForward(n int) {
-	fmt.Printf("\033[%dC", n)
+func (s *Spinner) Get() string {
+	return string(s.Chars[s.currentIndex])
 }
 
-func MoveCursorBackward(n int) {
-	fmt.Printf("\033[%dD", n)
+func (s *Spinner) Increment() {
+	s.currentIndex = (s.currentIndex + 1) % len(s.Chars)
 }
 
-func ClearScreen() {
-	fmt.Print("\033[2J")
-}
-
-func EraseToEndOfLine() {
-	fmt.Print("\033[K")
-}
-
-func SaveCursorPosition() {
-	fmt.Print("\033[s")
-}
-
-func RestoreCursorPosition() {
-	fmt.Print("\033[u")
+func (s *Spinner) GetAndIncrement() string {
+	c := s.Get()
+	s.Increment()
+	return c
 }
 
 func main() {
@@ -52,11 +61,11 @@ func main() {
 	words := []string{"Hello", "World", "!"}
 
 	for {
-		fmt.Printf("\r%c %s", spinnerChars[i], words[i%len(words)])
-		// fmt.Printf("\033[1K\r%c %s", spinnerChars[i], words[i%len(words)])
+		// fmt.Printf("\r%c %s", spinnerChars[i], words[i%len(words)])
+		fmt.Printf("\033[1K\r%c %s", spinnerChars[i], words[i%len(words)])
 
-		// time.Sleep(time.Millisecond * 100)
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 100)
+		// time.Sleep(time.Second * 1)
 
 		i = (i + 1) % len(spinnerChars)
 	}
