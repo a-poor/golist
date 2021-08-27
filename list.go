@@ -21,16 +21,6 @@ const (
 	SpinnerChars3 = "|/-\\"
 )
 
-type TaskStatus int
-
-const (
-	TaskNotStarted TaskStatus = iota
-	TaskInProgress
-	TaskCompleted
-	TaskFailed
-	TaskSkipped
-)
-
 type List struct {
 	Tasks   []*Task
 	running bool
