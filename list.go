@@ -12,9 +12,14 @@ const (
 	EmojiXAlt     = "✗"
 	ArrowRight    = "➜"
 	ArrowRightAlt = "❱"
+	ArrowDown     = "↓"
 )
 
-const SpinnerChars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+const (
+	SpinnerChars1 = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+	SpinnerChars2 = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛"
+	SpinnerChars3 = "|/-\\"
+)
 
 type TaskStatus int
 
@@ -117,7 +122,7 @@ type spinner struct {
 }
 
 func NewSpinner() *spinner {
-	return &spinner{chars: []rune(SpinnerChars)}
+	return &spinner{chars: []rune(SpinnerChars3)}
 }
 
 func (s *spinner) Next() string {
@@ -179,7 +184,7 @@ func (t *Task) getMarker() string {
 	case TaskFailed:
 		return toRed(EmojiX)
 	case TaskSkipped:
-		return toBlack(ArrowRight)
+		return toBlack(ArrowDown)
 	default:
 		return "?"
 	}
