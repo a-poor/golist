@@ -29,6 +29,8 @@ A terminal task-list tool for Go. Inspired by the Node package [listr](https://w
 * Fix issue with strings that are too long for one line
     * Truncate text based on terminal width?
     * Calculate & account for strings expected to be multi-line
+* Add tests!
+    * How do you test modifying terminal output?
 
 
 
