@@ -1,17 +1,17 @@
 package main
 
-func fmtBlack(s string) string {
+func toBlack(s string) string {
 	return "\033[30;1m" + s + "\033[0m"
 }
 
-func fmtYellow(s string) string {
+func toYellow(s string) string {
 	return "\033[33;1m" + s + "\033[0m"
 }
 
-func fmtGreen(s string) string {
+func toGreen(s string) string {
 	return "\033[32;1m" + s + "\033[0m"
 }
 
-func fmtRed(s string) string {
+func toRed(s string) string {
 	return "\033[31;1m" + s + "\033[0m"
 }
