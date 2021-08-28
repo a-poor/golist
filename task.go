@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
+
+var ErrNilAction = errors.New("nil action")
 
 type Task struct {
 	Message string       // Message to display to user
@@ -17,13 +20,30 @@ type Task struct {
 }
 
 func (t *Task) Run() error {
-	if t.statusIndicator == nil {
-		t.initStatusIndicator()
+	if t.Skip != nil && t.Skip() {
+		t.status = TaskSkipped
+		return nil
 	}
-	return nil
+
+	if t.Action == nil {
+		t.status = TaskFailed
+		t.err = ErrNilAction
+		return t.err
+	}
+
+	err := t.Action()
+	t.err = err
+	return err
+}
+
+func (t *Task) init() {
+	t.initStatusIndicator()
 }
 
 func (t *Task) Print(indent int) {
+	if t.statusIndicator == nil {
+		t.init()
+	}
 	pad := strings.Repeat(" ", indent)
 	stat := t.statusIndicator(t.status)
 	fmt.Printf("%s%s %s\n", pad, stat, t.Message)
@@ -56,5 +76,5 @@ func (t Task) GetSize() int {
 }
 
 func (t *Task) initStatusIndicator() {
-	t.statusIndicator = createStatusIndicator(&statusIndicatorConfig{})
+	t.statusIndicator = createStatusIndicator(statusIndicatorConfig{})
 }

@@ -42,7 +42,7 @@ type statusIndicatorConfig struct {
 	Skipped    string
 }
 
-func createStatusIndicator(config *statusIndicatorConfig) func(TaskStatus) string {
+func createStatusIndicator(config statusIndicatorConfig) func(TaskStatus) string {
 	// Create maps to store state
 	indexes := make(map[TaskStatus]int)
 	characters := make(map[TaskStatus][]rune)

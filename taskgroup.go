@@ -20,8 +20,8 @@ func NewTaskGroup() *TaskGroup {
 	return &TaskGroup{}
 }
 
-func (tg *TaskGroup) AddTask(t *TaskRunner) {
-	tg.Tasks = append(tg.Tasks, *t)
+func (tg *TaskGroup) AddTask(t TaskRunner) {
+	tg.Tasks = append(tg.Tasks, t)
 }
 
 func (tg *TaskGroup) Run() error {
@@ -97,5 +97,5 @@ func (tg *TaskGroup) GetSize() int {
 }
 
 func (tg *TaskGroup) initStatusIndicator() {
-	tg.statusIndicator = createStatusIndicator(&statusIndicatorConfig{})
+	tg.statusIndicator = createStatusIndicator(statusIndicatorConfig{})
 }
