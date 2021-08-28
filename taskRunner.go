@@ -1,6 +1,4 @@
-package main
-
-const IndentSize = 2
+package golist
 
 type TaskRunner interface {
 	Run() error            // Run the task and return any error

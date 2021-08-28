@@ -1,22 +1,4 @@
-package main
-
-type TaskStatus int
-
-const (
-	TaskNotStarted TaskStatus = iota
-	TaskInProgress
-	TaskCompleted
-	TaskFailed
-	TaskSkipped
-)
-
-const (
-	defaultTaskNotStarted = "➜"
-	defaultTaskInProgress = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛"
-	defaultTaskCompleted  = "✓"
-	defaultTaskFailed     = "✗"
-	defaultTaskSkipped    = "↓"
-)
+package golist
 
 func toBlack(s string) string {
 	return "\033[30;1m" + s + "\033[0m"

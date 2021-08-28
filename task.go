@@ -1,12 +1,9 @@
-package main
+package golist
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
-
-var ErrNilAction = errors.New("nil action")
 
 type Task struct {
 	Message string       // Message to display to user
