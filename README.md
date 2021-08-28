@@ -4,6 +4,9 @@ _created by Austin Poor_
 
 ![quick & early example](./etc/sample.gif)
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
+[![Go](https://github.com/a-poor/golist/actions/workflows/go.yml/badge.svg)](https://github.com/a-poor/golist/actions/workflows/go.yml)
+
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr) and the [AWS Copilot CLI](https://github.com/aws/copilot-cli).
 
 
