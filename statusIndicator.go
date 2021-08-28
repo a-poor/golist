@@ -11,14 +11,30 @@ const (
 )
 
 const (
-	DefaultTaskNotStarted = "➜"
-	DefaultTaskInProgress = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛"
-	DefaultTaskCompleted  = "✓"
-	DefaultTaskFailed     = "✗"
-	DefaultTaskSkipped    = "↓"
+	defaultTaskNotStarted = "➜"
+	defaultTaskInProgress = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛"
+	defaultTaskCompleted  = "✓"
+	defaultTaskFailed     = "✗"
+	defaultTaskSkipped    = "↓"
 )
 
-type StatusIndicatorConfig struct {
+func toBlack(s string) string {
+	return "\033[30;1m" + s + "\033[0m"
+}
+
+func toYellow(s string) string {
+	return "\033[33;1m" + s + "\033[0m"
+}
+
+func toGreen(s string) string {
+	return "\033[32;1m" + s + "\033[0m"
+}
+
+func toRed(s string) string {
+	return "\033[31;1m" + s + "\033[0m"
+}
+
+type statusIndicatorConfig struct {
 	NotStarted string
 	InProgress string
 	Completed  string
@@ -26,53 +42,69 @@ type StatusIndicatorConfig struct {
 	Skipped    string
 }
 
-func CreateStatusIndicator(config *StatusIndicatorConfig) func(TaskStatus) rune {
+func createStatusIndicator(config *statusIndicatorConfig) func(TaskStatus) string {
 	// Create maps to store state
 	indexes := make(map[TaskStatus]int)
 	characters := make(map[TaskStatus][]rune)
 
 	// Get values (or use defaults)
 	if config.NotStarted == "" {
-		characters[TaskNotStarted] = []rune(DefaultTaskNotStarted)
+		characters[TaskNotStarted] = []rune(defaultTaskNotStarted)
 	} else {
 		characters[TaskNotStarted] = []rune(config.NotStarted)
 	}
 	if config.InProgress == "" {
-		characters[TaskInProgress] = []rune(DefaultTaskInProgress)
+		characters[TaskInProgress] = []rune(defaultTaskInProgress)
 	} else {
 		characters[TaskInProgress] = []rune(config.InProgress)
 	}
 	if config.Completed == "" {
-		characters[TaskCompleted] = []rune(DefaultTaskCompleted)
+		characters[TaskCompleted] = []rune(defaultTaskCompleted)
 	} else {
 		characters[TaskCompleted] = []rune(config.Completed)
 	}
 	if config.Failed == "" {
-		characters[TaskFailed] = []rune(DefaultTaskFailed)
+		characters[TaskFailed] = []rune(defaultTaskFailed)
 	} else {
 		characters[TaskFailed] = []rune(config.Failed)
 	}
 	if config.Skipped == "" {
-		characters[TaskSkipped] = []rune(DefaultTaskSkipped)
+		characters[TaskSkipped] = []rune(defaultTaskSkipped)
 	} else {
 		characters[TaskSkipped] = []rune(config.Skipped)
 	}
 
 	// Create & return closure
-	return func(status TaskStatus) rune {
+	return func(status TaskStatus) string {
 		// Get index
 		i := indexes[status]
 
 		// Get character
 		cs, ok := characters[status]
 		if !ok {
-			return ' '
+			return " "
+		}
+
+		var colorFn func(string) string
+		switch status {
+		case TaskNotStarted, TaskSkipped:
+			colorFn = toBlack
+		case TaskInProgress:
+			colorFn = toYellow
+		case TaskCompleted:
+			colorFn = toGreen
+		case TaskFailed:
+			colorFn = toRed
+		default:
+			colorFn = func(s string) string {
+				return s
+			}
 		}
 
 		// Increment index
 		indexes[status] = (i + 1) % len(cs)
 
 		// Return character
-		return cs[i]
+		return colorFn(string(cs[i]))
 	}
 }
