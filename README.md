@@ -5,7 +5,11 @@ _created by Austin Poor_
 ![quick & early example](./etc/sample.gif)
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
-[![Go](https://github.com/a-poor/golist/actions/workflows/go.yml/badge.svg)](https://github.com/a-poor/golist/actions/workflows/go.yml)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/a-poor/golist/Go?style=flat-square)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/a-poor/golist?style=flat-square)
+![GitHub](https://img.shields.io/github/license/a-poor/golist?style=flat-square)
+[![Go Report Card](https://goreportcard.com/badge/github.com/a-poor/golist)](https://goreportcard.com/report/github.com/a-poor/golist)
+[![Sourcegraph](https://sourcegraph.com/github.com/a-poor/golist/-/badge.svg)](https://sourcegraph.com/github.com/a-poor/golist?badge)
 
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr) and the [AWS Copilot CLI](https://github.com/aws/copilot-cli).
 
