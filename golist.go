@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -30,7 +31,10 @@ func main() {
 			return nil
 		},
 	})
-	tg := TaskGroup{Message: "Task Group 3"}
+	tg := TaskGroup{
+		Message:     "Task Group 3",
+		FailOnError: true,
+	}
 	tg.AddTask(&Task{
 		Message: "Task 3a",
 		Action: func() error {
@@ -42,7 +46,7 @@ func main() {
 		Message: "Task 3b",
 		Action: func() error {
 			time.Sleep(time.Second / 2)
-			return nil
+			return errors.New("oh no")
 		},
 	})
 	tg.AddTask(&Task{
