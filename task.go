@@ -31,7 +31,14 @@ func (t *Task) Run() error {
 		return t.err
 	}
 
+	t.status = TaskInProgress
 	err := t.Action()
+
+	if err != nil {
+		t.status = TaskFailed
+	} else {
+		t.status = TaskCompleted
+	}
 	t.err = err
 	return err
 }
@@ -61,6 +68,10 @@ func (t *Task) SetMessage(m string) {
 
 func (t *Task) SetError(err error) {
 	t.err = err
+}
+
+func (t *Task) GetStatus() TaskStatus {
+	return t.status
 }
 
 func (t *Task) SetStatus(s TaskStatus) {

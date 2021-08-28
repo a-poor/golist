@@ -46,7 +46,7 @@ func (l *List) Start() {
 			default:
 				l.clear()
 				l.print()
-				time.Sleep(time.Second)
+				time.Sleep(time.Millisecond * 100)
 			}
 		}
 	}()

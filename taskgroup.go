@@ -25,10 +25,6 @@ func (tg *TaskGroup) AddTask(t TaskRunner) {
 }
 
 func (tg *TaskGroup) Run() error {
-	if tg.statusIndicator == nil {
-		tg.initStatusIndicator()
-	}
-
 	// Check if the task should be skipped
 	if tg.Skip != nil && tg.Skip() {
 		tg.SetStatus(TaskSkipped)
@@ -54,7 +50,14 @@ func (tg *TaskGroup) Run() error {
 	return err
 }
 
+func (tg *TaskGroup) init() {
+	tg.initStatusIndicator()
+}
+
 func (tg *TaskGroup) Print(indent int) {
+	if tg.statusIndicator == nil {
+		tg.init()
+	}
 	pad := strings.Repeat(" ", indent)
 	stat := tg.statusIndicator(tg.status)
 	fmt.Printf("%s%s %s\n", pad, stat, tg.Message)
@@ -86,6 +89,10 @@ func (tg *TaskGroup) GetError() error {
 
 func (tg *TaskGroup) SetError(err error) {
 	tg.err = err
+}
+
+func (tg *TaskGroup) GetStatus() TaskStatus {
+	return tg.status
 }
 
 func (tg *TaskGroup) SetStatus(s TaskStatus) {
