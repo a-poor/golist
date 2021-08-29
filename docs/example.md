@@ -94,5 +94,5 @@ list.Stop()
 
 And here's what that looks like in action:
 
-![Sample GIF](https://raw.githubusercontent.com/a-poor/golist/main/etc/sample.gif)
+![Sample GIF](assets/sample.gif)
 

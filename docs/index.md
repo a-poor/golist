@@ -1,6 +1,6 @@
 # golist
 
-![Sample GIF](https://raw.githubusercontent.com/a-poor/golist/main/etc/sample.gif)
+![Sample GIF](assets/sample.gif)
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/a-poor/golist/Go?style=flat-square)

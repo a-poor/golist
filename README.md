@@ -1,8 +1,6 @@
 # golist
 
-_created by Austin Poor_
-
-![quick & early example](./etc/sample.gif)
+![quick & early example](docs/assets/sample.gif)
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/a-poor/golist/Go?style=flat-square)
@@ -10,6 +8,8 @@ _created by Austin Poor_
 ![GitHub](https://img.shields.io/github/license/a-poor/golist?style=flat-square)
 [![Go Report Card](https://goreportcard.com/badge/github.com/a-poor/golist)](https://goreportcard.com/report/github.com/a-poor/golist)
 [![Sourcegraph](https://sourcegraph.com/github.com/a-poor/golist/-/badge.svg)](https://sourcegraph.com/github.com/a-poor/golist?badge)
+
+_created by Austin Poor_
 
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr) and the [AWS Copilot CLI](https://github.com/aws/copilot-cli).
 

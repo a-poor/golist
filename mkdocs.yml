@@ -1,6 +1,7 @@
 site_name: golist
 theme:
   name: material
+  logo: assets/golist-500.png
 
 repo_url: https://github.com/a-poor/golist
 site_author: Austin Poor
