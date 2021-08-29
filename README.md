@@ -13,6 +13,8 @@ _created by Austin Poor_
 
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr) and the [AWS Copilot CLI](https://github.com/aws/copilot-cli).
 
+Check out the documentation [here](https://a-poor.github.io/golist)!
+
 
 ## Features
 * Multi-line lists print to the console
