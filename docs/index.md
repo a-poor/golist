@@ -9,15 +9,23 @@
 
 _created by Austin Poor_
 
-A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr) and the [AWS Copilot CLI](https://github.com/aws/copilot-cli).
+A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr).
 
-## Quick Example
+## Example
+
+Here's a quick example of `golist` in action!
+
+Start by creating a list.
 
 ```go
-// Create a List
 list := List{}
+```
 
-// Add some tasks
+And let's create some tasks to add to the list. 
+
+`Message` is the text to be displayed and `Action` is the function to be run.
+
+```go
 list.AddTask(&Task{
     Message: "Task 1",
     Action: func() error {
@@ -32,8 +40,13 @@ list.AddTask(&Task{
         return nil
     },
 })
+```
 
-// Create a group of tasks
+Next, we'll create a group of 3 sub-tasks.
+
+We'll set the `FailOnError` parameter, so if any of the tasks return an error, the rest will be skipped.
+
+```go
 tg := TaskGroup{
     Message:     "Task Group 3",
     FailOnError: true,
@@ -59,8 +72,11 @@ tg.AddTask(&Task{
         return nil
     },
 })
+```
 
-// Add the TaskGroup
+And let's add that task group and then another task for good measure.
+
+```go
 list.AddTask(&tg)
 list.AddTask(&Task{
     Message: "Task 4",
@@ -69,20 +85,27 @@ list.AddTask(&Task{
         return nil
     },
 })
-
-// Start displaying the task list & statuses
-fmt.Println("Starting...")
-list.Start()
-
-// Run the tasks (syncronously)
-list.Run()
-
-// Stop displaying the task list & statuses
-list.Stop()
-fmt.Println("Done.")
 ```
 
-And the result is...
+The `Start` function will start to display the task list and the task statuses.
+
+```go
+list.Start()
+```
+
+Then, the `Run` function will start to run the tasks syncronously and update the statuses as they complete.
+
+```go
+list.Run()
+```
+
+And once we're done, we can call `Stop` to stop updating the task status list.
+
+```go
+list.Stop()
+```
+
+And here's what that looks like in action:
 
 ![Sample GIF](https://raw.githubusercontent.com/a-poor/golist/main/etc/sample.gif)
 
