@@ -1,4 +1,23 @@
 site_name: golist
 theme:
   name: material
-  
+
+repo_url: https://github.com/a-poor/golist
+site_author: Austin Poor
+
+nav:
+  - Home: "index.md"
+  - "install.md"
+  - "example.md"
+  - "Issue Tracker": "https://github.com/a-poor/golist/issues"
+
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js
+extra_css:
+  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css
+

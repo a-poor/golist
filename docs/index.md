@@ -1,5 +1,7 @@
 # golist
 
+![Sample GIF](https://raw.githubusercontent.com/a-poor/golist/main/etc/sample.gif)
+
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/a-poor/golist/Go?style=flat-square)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/a-poor/golist?style=flat-square)
@@ -9,103 +11,67 @@
 
 _created by Austin Poor_
 
+## About
+
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr).
 
-## Example
+## Quickstart
 
-Here's a quick example of `golist` in action!
+Install golist with:
 
-Start by creating a list.
-
-```go
-list := List{}
+```bash
+$ go get github.com/a-poor/golist
 ```
 
-And let's create some tasks to add to the list. 
-
-`Message` is the text to be displayed and `Action` is the function to be run.
+And create a task-list:
 
 ```go
-list.AddTask(&Task{
-    Message: "Task 1",
+// Create a list
+list := golist.List{}
+
+// Add some tasks!
+// This task runs and succeeds
+list.AddTask(&golist.Task{
+    Message: "Start with this",
     Action: func() error {
         time.Sleep(time.Second / 2)
         return nil
     },
 })
-list.AddTask(&Task{
-    Message: "Task 2",
+// This task is skipped
+list.AddTask(&golist.Task{
+    Message: "Then skip this",
+    Skip: func() bool {
+        return true
+    }
     Action: func() error {
         time.Sleep(time.Second / 4)
         return nil
     },
 })
-```
-
-Next, we'll create a group of 3 sub-tasks.
-
-We'll set the `FailOnError` parameter, so if any of the tasks return an error, the rest will be skipped.
-
-```go
-tg := TaskGroup{
-    Message:     "Task Group 3",
-    FailOnError: true,
-}
-tg.AddTask(&Task{
-    Message: "Task 3a",
-    Action: func() error {
-        time.Sleep(time.Second / 4)
-        return nil
-    },
-})
-tg.AddTask(&Task{
-    Message: "Task 3b",
-    Action: func() error {
-        time.Sleep(time.Second / 2)
-        return errors.New("oh no")
-    },
-})
-tg.AddTask(&Task{
-    Message: "Task 3c",
-    Action: func() error {
-        time.Sleep(time.Second / 3)
-        return nil
-    },
-})
-```
-
-And let's add that task group and then another task for good measure.
-
-```go
-list.AddTask(&tg)
+// And this task runs but fails
 list.AddTask(&Task{
-    Message: "Task 4",
+    Message: "And finally, this should fail",
     Action: func() error {
         time.Sleep(time.Second / 3)
-        return nil
+        return errors.New("oops")
     },
 })
-```
 
-The `Start` function will start to display the task list and the task statuses.
-
-```go
+// Start displaying the task status
 list.Start()
-```
 
-Then, the `Run` function will start to run the tasks syncronously and update the statuses as they complete.
-
-```go
+// Run the tasks
 list.Run()
-```
 
-And once we're done, we can call `Stop` to stop updating the task status list.
-
-```go
+// Stop displaying the task status
 list.Stop()
 ```
 
-And here's what that looks like in action:
+## Etc
 
-![Sample GIF](https://raw.githubusercontent.com/a-poor/golist/main/etc/sample.gif)
+Let me know what you think of `golist`! I'd love any feedback you have. 
+
+Please feel free to submit an issue or a pr!
+
 
