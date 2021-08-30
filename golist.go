@@ -16,7 +16,7 @@ const (
 
 const (
 	defaultTaskNotStarted = "➜"
-	defaultTaskInProgress = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛"
+	defaultTaskInProgress = "\\|/–"
 	defaultTaskCompleted  = "✓"
 	defaultTaskFailed     = "✗"
 	defaultTaskSkipped    = "↓"
