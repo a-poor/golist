@@ -24,11 +24,18 @@ func ToRed(s string) string {
 	return "\033[31;1m" + s + "\033[0m"
 }
 
+// Indicator is an interface for keeping track of
+// status indicator state.
 type Indicator interface {
 	Get() string // Get the current indicator character
 	Next()       // Move to the next indicator
 }
 
+// StaticIndicator implements the Indicator interface
+// and returns a single (optionally colorized) indicator
+// character.
+//
+// Note: The `Next` method is a no-op.
 type StaticIndicator struct {
 	Indicator rune                // Character to return
 	Colorizer func(string) string // Optional function to colorize the indicator
@@ -49,6 +56,9 @@ func (si *StaticIndicator) Next() {
 	// Do nothing
 }
 
+// CycleIndicator implements the Indicator interface and
+// cycles through returning (optionally colorized)
+// characters from a slice.
 type CycleIndicator struct {
 	Indicators []rune              // Array of indicator characters
 	index      int                 // Current position in the Indicators array

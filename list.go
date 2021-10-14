@@ -2,20 +2,33 @@ package golist
 
 import (
 	"context"
+	"errors"
+	"io"
+	"os"
 	"time"
 )
 
+// List is the top-level task list.
+// Note,
 type List struct {
 	Tasks       []TaskRunner // List of tasks to run
 	FailOnError bool         // If true, the task execution stops on the first error
+	Concurrent  bool         // Should the tasks be run concurrently? NOTE: Not supported yet
+	Writer      io.Writer    // Writer to use for printing output
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
 }
 
-// NewList creates a new task list
+// NewList creates a new task list that writes to stdout
 func NewList() *List {
-	return &List{}
+	return &List{Writer: os.Stdout}
+}
+
+// NewList creates a new task list that writes to the
+// provided io.Writer. Mostly used for testing.
+func NewListWithWriter(w io.Writer) *List {
+	return &List{Writer: w}
 }
 
 // AddTask adds a TaskRunner to the top-level List
@@ -28,10 +41,17 @@ func (l *List) AddTask(t TaskRunner) {
 
 // Start begins displaying the list statuses
 // from a background goroutine.
-func (l *List) Start() {
+//
+// Note: If the list is created without a writer,
+// this function will return an error.
+func (l *List) Start() error {
+	if l.Writer == nil {
+		return errors.New("no writer specified")
+	}
+
 	// Check if it's already displaying
 	if l.running {
-		return
+		return nil
 	}
 
 	// Create a cancelable context
@@ -55,6 +75,8 @@ func (l *List) Start() {
 
 	// Set the running flag
 	l.running = true
+
+	return nil
 }
 
 // Run starts calling the Action functions for each task
