@@ -22,25 +22,70 @@ Check out the documentation [here](https://a-poor.github.io/golist)!
 * Status updates live (with spinners while processing)
 * Tasks can be skipped or fail
 
-## To Do
-* Clean out the public facing API
-    * Be consistent with exported vs unexported values
-    * Add helper functions & config structs for quickly creating objects
-* Add nested lists
-    * Each task has a list of optional sub-tasks
-    * Or should a `TaskRunner` be an interface? With `Tasks` and `TaskGroups` both implementing the interface? (Should task-groups have actions?)
-    * Leave task results behind?
-* Pass a context to the action/skip functions
-    * Store values for subsequent tasks
-    * Values can help later tasks decide if they should stop
-* Give the user a way to update the list item text/status/etc. while working
-* Run tasks in a group concurrently?
-* Fix issue with strings that are too long for one line
-    * Truncate text based on terminal width?
-    * Calculate & account for strings expected to be multi-line
-* Add tests!
-    * How do you test modifying terminal output?
+## Installation
 
+```sh
+go get github.com/a-poor/golist
+```
 
+## Dependencies
 
+...
+
+## Example
+
+Here's a quick example of `golist` in action:
+
+```go
+// Create a list
+list := golist.List{}
+
+// Add some tasks!
+// This task runs and succeeds
+list.AddTask(&golist.Task{
+    Message: "Start with this",
+    Action: func() error {
+        time.Sleep(time.Second / 2)
+        return nil
+    },
+})
+// This task is skipped
+list.AddTask(&golist.Task{
+    Message: "Then skip this",
+    Skip: func() bool {
+        return true
+    },
+    Action: func() error {
+        time.Sleep(time.Second / 4)
+        return nil
+    },
+})
+// And this task runs but fails
+list.AddTask(&golist.Task{
+    Message: "And finally, this should fail",
+    Action: func() error {
+        time.Sleep(time.Second / 3)
+        return errors.New("oops")
+    },
+})
+
+// Start displaying the task status
+list.Start()
+
+// Run the tasks
+list.Run()
+
+// Stop displaying the task status
+list.Stop()
+```
+
+## License
+
+[MIT](./LICENSE)
+
+## Contributing
+
+Pull requests are super welcome! For major changes, please open an issue first to discuss what you would like to change. And please make sure to update tests as appropriate.
+
+Or... feel free to just open an issue with some thoughts or suggestions or even just to say Hi and tell me if this library has been helpful!
 
