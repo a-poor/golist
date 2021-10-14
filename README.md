@@ -2,6 +2,7 @@
 
 ![quick & early example](docs/assets/sample.gif)
 
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/a-poor/golist?label=Version&style=flat-square)
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/a-poor/golist/Go?style=flat-square)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/a-poor/golist?style=flat-square)
