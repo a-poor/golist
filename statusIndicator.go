@@ -99,7 +99,7 @@ func (si *StatusIndicators) Next() {
 // with default values for each status.
 //
 // The default values are:
-//   – TaskNotStarted: "➜"
+//   – TaskNotStarted: "➜" (default terminal color)
 //   – TaskInProgress: "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏" (yellow)
 //   – TaskCompleted: "✓" (green)
 //   – TaskFailed: "✗" (red)
