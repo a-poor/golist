@@ -43,14 +43,14 @@ list.AddTask(&golist.Task{
     Message: "Then skip this",
     Skip: func() bool {
         return true
-    }
+    },
     Action: func() error {
         time.Sleep(time.Second / 4)
         return nil
     },
 })
 // And this task runs but fails
-list.AddTask(&Task{
+list.AddTask(&golist.Task{
     Message: "And finally, this should fail",
     Action: func() error {
         time.Sleep(time.Second / 3)
