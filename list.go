@@ -13,12 +13,13 @@ var DefaultListDelay = time.Millisecond * 100
 
 // List is the top-level task list.
 type List struct {
-	Tasks         []TaskRunner  // List of tasks to run
-	Delay         time.Duration // Delay between prints
-	FailOnError   bool          // If true, the task execution stops on the first error
-	Concurrent    bool          // Should the tasks be run concurrently? NOTE: Not supported yet
-	Writer        io.Writer     // Writer to use for printing output
-	MaxLineLength int           // Maximum line length for printing (0 = no limit)
+	Tasks           []TaskRunner     // List of tasks to run
+	Delay           time.Duration    // Delay between prints
+	FailOnError     bool             // If true, the task execution stops on the first error
+	Concurrent      bool             // Should the tasks be run concurrently? NOTE: Not supported yet
+	Writer          io.Writer        // Writer to use for printing output
+	MaxLineLength   int              // Maximum line length for printing (0 = no limit)
+	StatusIniicator StatusIndicators // Map of statuses to status indicators
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
@@ -28,8 +29,9 @@ type List struct {
 // It writes to stdout and and has a delay of 100ms between prints.
 func NewDefaultList() *List {
 	return &List{
-		Writer: os.Stdout,
-		Delay:  DefaultListDelay,
+		Writer:          os.Stdout,
+		Delay:           DefaultListDelay,
+		StatusIniicator: CreateDefaultStatusIndicator(),
 	}
 }
 
@@ -37,8 +39,9 @@ func NewDefaultList() *List {
 // provided io.Writer. Mostly used for testing.
 func NewListWithWriter(w io.Writer) *List {
 	return &List{
-		Writer: w,
-		Delay:  DefaultListDelay,
+		Writer:          w,
+		Delay:           DefaultListDelay,
+		StatusIniicator: CreateDefaultStatusIndicator(),
 	}
 }
 
@@ -150,4 +153,18 @@ func (l *List) getTaskStates() []TaskState {
 		messages = append(messages, msgs...)
 	}
 	return messages
+}
+
+// type TaskState struct {
+// 	Message string
+// 	Status  TaskStatus
+// 	Depth   int
+// }
+
+func (l *List) formatMessage(m TaskState) string {
+	return ""
+}
+
+func (l *List) print2(states []TaskState) {
+
 }
