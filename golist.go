@@ -14,6 +14,24 @@ const (
 	TaskSkipped
 )
 
+// Format a TaskStatus as a string
+func (s TaskStatus) String() string {
+	switch s {
+	case TaskNotStarted:
+		return "Not Started"
+	case TaskInProgress:
+		return "In Progress"
+	case TaskCompleted:
+		return "Completed"
+	case TaskFailed:
+		return "Failed"
+	case TaskSkipped:
+		return "Skipped"
+	default:
+		return "Unknown"
+	}
+}
+
 const (
 	defaultTaskNotStarted = "➜"
 	defaultTaskInProgress = "\\|/–"
@@ -22,12 +40,6 @@ const (
 	defaultTaskSkipped    = "↓"
 )
 
+// ErrNilAction is returned when no action is
+// set for a task.
 var ErrNilAction = errors.New("nil action")
-
-var StatusMsg = map[TaskStatus]string{
-	TaskNotStarted: "Not Started",
-	TaskInProgress: "In Progress",
-	TaskCompleted:  "Completed",
-	TaskFailed:     "Failed",
-	TaskSkipped:    "Skipped",
-}
