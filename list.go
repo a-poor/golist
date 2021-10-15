@@ -3,8 +3,10 @@ package golist
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -74,14 +76,17 @@ func (l *List) Start() error {
 
 	// Start the display loop
 	go func() {
-		l.print()
+		ts := l.getTaskStates()
+		l.print(ts)
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				l.clear()
-				l.print()
+				l.clear(ts)
+				ts = l.getTaskStates()
+				l.print(ts)
+				l.StatusIniicator.Next()
 				time.Sleep(time.Millisecond * 100)
 			}
 		}
@@ -122,27 +127,16 @@ func (l *List) Stop() {
 	l.cancel()
 
 	// Clear and print one final time (NOTE: should this be an option?)
-	l.clear()
-	l.print()
+	ts := l.getTaskStates()
+	l.clear(ts)
+	l.print(ts)
 
 	l.running = false
 	l.cancel = nil
 }
 
-// print calls the `print` function for each of the TaskRunners
-func (l *List) print() {
-	for _, t := range l.Tasks {
-		t.Print(0)
-	}
-}
-
-// clear calls the `clear` function for each of the TaskRunners
-func (l *List) clear() {
-	for _, t := range l.Tasks {
-		t.Clear()
-	}
-}
-
+// getTaskStates returns a slice of TaskStates
+// for all child tasks
 func (l *List) getTaskStates() []TaskState {
 	var messages []TaskState
 	for _, t := range l.Tasks {
@@ -161,10 +155,47 @@ func (l *List) getTaskStates() []TaskState {
 // 	Depth   int
 // }
 
-func (l *List) formatMessage(m TaskState) string {
-	return ""
+// truncateMessage will truncate the message if it's too long
+// based on the MaxLineLength parameter. If MaxLineLength is
+// 0, the message will not be truncated.
+func (l *List) truncateMessage(m string) string {
+	if l.MaxLineLength == 0 {
+		return m
+	}
+	rm := []rune(m)
+	if len(rm) < l.MaxLineLength {
+		return m
+	}
+	return string(rm[0:l.MaxLineLength])
 }
 
-func (l *List) print2(states []TaskState) {
+// formatMessage formats a message row for displaying.
+// The format used is: [depth] [status] [message]
+// and it's length is (optionally) limited by the
+// MaxLineLength parameter.
+func (l *List) formatMessage(m TaskState) string {
+	d := strings.Repeat(" ", m.Depth*IndentSize)
+	i := l.StatusIniicator.Get(m.Status)
+	s := fmt.Sprintf("%s%s %s", d, i, m.Message)
+	return l.truncateMessage(s)
+}
+
+// print prints the current task states
+func (l *List) print(states []TaskState) {
+	for _, m := range states {
+		fmt.Fprintln(l.Writer, l.formatMessage(m))
+	}
+}
+
+// print prints the current task states
+func (l *List) clear(states []TaskState) {
+	n := len(states)
+	s := ("\033[1A" + // Move up a line
+		"\033[K" + // Clear the line
+		"\r") // Move back to the beginning of the line
+
+	for i := 0; i < n; i++ {
+		fmt.Fprint(l.Writer, s)
+	}
 
 }

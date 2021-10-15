@@ -1,10 +1,5 @@
 package golist
 
-import (
-	"fmt"
-	"strings"
-)
-
 type TaskState struct {
 	Message string
 	Status  TaskStatus
@@ -16,41 +11,44 @@ type TaskState struct {
 type Task struct {
 	Message string                  // Message to display to user
 	Action  func(TaskContext) error // The task function to be run
-	Skip    func() bool             // Is run before the task starts. If returns true, the task isn't run
+	Skip    func(TaskContext) bool  // Is run before the task starts. If returns true, the task isn't run
 
-	statusIndicator func(TaskStatus) string
-	status          TaskStatus // The status of the task
-	err             error      // The error returned by the task function
+	status TaskStatus // The status of the task
+	err    error      // The error returned by the task function
 }
 
 // Run runs the task's action function
 func (t *Task) Run() error {
-	if t.Skip != nil && t.Skip() {
+	// Create a TaskContext to pass to `Skip` and `Action`
+	c := t.createContext()
+
+	// Check if the task should be skipped
+	if t.Skip != nil && t.Skip(c) {
 		t.status = TaskSkipped
 		return nil
 	}
 
+	// Check that an action function exists
 	if t.Action == nil {
 		t.status = TaskFailed
 		t.err = ErrNilAction
 		return t.err
 	}
 
-	t.status = TaskInProgress
-	ctx := t.createContext()
-	err := t.Action(ctx)
+	// Set the status to in-progress and run
+	t.SetStatus(TaskInProgress)
+	err := t.Action(c)
 
+	// Evaluate the error and update the task status
 	if err != nil {
-		t.status = TaskFailed
+		t.SetStatus(TaskFailed)
 	} else {
-		t.status = TaskCompleted
+		t.SetStatus(TaskCompleted)
 	}
-	t.err = err
-	return err
-}
 
-func (t *Task) init() {
-	t.initStatusIndicator()
+	// Store the error and return it
+	t.SetError(err)
+	return err
 }
 
 // createContext creates a TaskContext for the task
@@ -58,21 +56,6 @@ func (t *Task) createContext() TaskContext {
 	return &taskContext{func(msg string) {
 		t.SetMessage(msg)
 	}}
-}
-
-func (t *Task) Print(indent int) {
-	if t.statusIndicator == nil {
-		t.init()
-	}
-	pad := strings.Repeat(" ", indent)
-	stat := t.statusIndicator(t.status)
-	fmt.Printf("%s%s %s\n", pad, stat, t.Message)
-}
-
-func (t *Task) Clear() {
-	fmt.Print("\033[1A") // Move up a line
-	fmt.Print("\033[K")  // Clear the line
-	fmt.Print("\r")      // Move back to the beginning of the line
 }
 
 // SetMessage sets the Task's message text
@@ -101,10 +84,6 @@ func (t *Task) GetDepth() int {
 
 func (t Task) GetSize() int {
 	return 1
-}
-
-func (t *Task) initStatusIndicator() {
-	t.statusIndicator = createStatusIndicator(statusIndicatorConfig{})
 }
 
 func (t *Task) GetTaskStates() []TaskState {

@@ -89,13 +89,13 @@ type StatusIndicators map[TaskStatus]Indicator
 //
 // Note: If the TaskStatus is not found in the StatusIndicators map,
 // the uncolorized string "–" is returned
-func (si *StatusIndicators) Get() string {
+func (si *StatusIndicators) Get(s TaskStatus) string {
 	backup := "–"
-	s, ok := (*si)[TaskNotStarted]
+	i, ok := (*si)[s]
 	if !ok {
 		return backup
 	}
-	return s.Get()
+	return i.Get()
 }
 
 // Next calls Next on all indicators
@@ -136,82 +136,5 @@ func CreateDefaultStatusIndicator() StatusIndicators {
 			Indicator: '↓',
 			Colorizer: ToBlack,
 		},
-	}
-}
-
-//////// OLD FUNCTION ////////////
-
-type statusIndicatorConfig struct {
-	NotStarted string
-	InProgress string
-	Completed  string
-	Failed     string
-	Skipped    string
-}
-
-func createStatusIndicator(config statusIndicatorConfig) func(TaskStatus) string {
-	// Create maps to store state
-	indexes := make(map[TaskStatus]int)
-	characters := make(map[TaskStatus][]rune)
-
-	// Get values (or use defaults)
-	if config.NotStarted == "" {
-		characters[TaskNotStarted] = []rune(defaultTaskNotStarted)
-	} else {
-		characters[TaskNotStarted] = []rune(config.NotStarted)
-	}
-	if config.InProgress == "" {
-		characters[TaskInProgress] = []rune(defaultTaskInProgress)
-	} else {
-		characters[TaskInProgress] = []rune(config.InProgress)
-	}
-	if config.Completed == "" {
-		characters[TaskCompleted] = []rune(defaultTaskCompleted)
-	} else {
-		characters[TaskCompleted] = []rune(config.Completed)
-	}
-	if config.Failed == "" {
-		characters[TaskFailed] = []rune(defaultTaskFailed)
-	} else {
-		characters[TaskFailed] = []rune(config.Failed)
-	}
-	if config.Skipped == "" {
-		characters[TaskSkipped] = []rune(defaultTaskSkipped)
-	} else {
-		characters[TaskSkipped] = []rune(config.Skipped)
-	}
-
-	// Create & return closure
-	return func(status TaskStatus) string {
-		// Get index
-		i := indexes[status]
-
-		// Get character
-		cs, ok := characters[status]
-		if !ok {
-			return " "
-		}
-
-		var colorFn func(string) string
-		switch status {
-		case TaskNotStarted, TaskSkipped:
-			colorFn = ToBlack
-		case TaskInProgress:
-			colorFn = ToYellow
-		case TaskCompleted:
-			colorFn = ToGreen
-		case TaskFailed:
-			colorFn = ToRed
-		default:
-			colorFn = func(s string) string {
-				return s
-			}
-		}
-
-		// Increment index
-		indexes[status] = (i + 1) % len(cs)
-
-		// Return character
-		return colorFn(string(cs[i]))
 	}
 }

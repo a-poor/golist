@@ -32,14 +32,6 @@ func (s TaskStatus) String() string {
 	}
 }
 
-const (
-	defaultTaskNotStarted = "➜"
-	defaultTaskInProgress = "\\|/–"
-	defaultTaskCompleted  = "✓"
-	defaultTaskFailed     = "✗"
-	defaultTaskSkipped    = "↓"
-)
-
 // ErrNilAction is returned when no action is
 // set for a task.
 var ErrNilAction = errors.New("nil action")
