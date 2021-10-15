@@ -86,8 +86,8 @@ func (t Task) GetSize() int {
 	return 1
 }
 
-func (t *Task) GetTaskStates() []TaskState {
-	return []TaskState{{
+func (t *Task) GetTaskStates() []*TaskState {
+	return []*TaskState{{
 		Message: t.Message,
 		Status:  t.status,
 	}}

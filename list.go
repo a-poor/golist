@@ -137,13 +137,10 @@ func (l *List) Stop() {
 
 // getTaskStates returns a slice of TaskStates
 // for all child tasks
-func (l *List) getTaskStates() []TaskState {
-	var messages []TaskState
+func (l *List) getTaskStates() []*TaskState {
+	var messages []*TaskState
 	for _, t := range l.Tasks {
 		msgs := t.GetTaskStates()
-		for _, m := range msgs {
-			m.Depth++
-		}
 		messages = append(messages, msgs...)
 	}
 	return messages
@@ -175,7 +172,7 @@ func (l *List) truncateMessage(m string, size int) string {
 // The format used is: [depth] [status] [message]
 // and it's length is (optionally) limited by the
 // MaxLineLength parameter.
-func (l *List) formatMessage(m TaskState) string {
+func (l *List) formatMessage(m *TaskState) string {
 	n := m.Depth * IndentSize
 	d := strings.Repeat(" ", n)
 	i := l.StatusIniicator.Get(m.Status)
@@ -192,14 +189,14 @@ func (l *List) formatMessage(m TaskState) string {
 }
 
 // print prints the current task states
-func (l *List) print(states []TaskState) {
+func (l *List) print(states []*TaskState) {
 	for _, m := range states {
 		fmt.Fprintln(l.Writer, l.formatMessage(m))
 	}
 }
 
 // print prints the current task states
-func (l *List) clear(states []TaskState) {
+func (l *List) clear(states []*TaskState) {
 	n := len(states)
 	s := ("\033[1A" + // Move up a line
 		"\033[K" + // Clear the line

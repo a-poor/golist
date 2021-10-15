@@ -79,8 +79,8 @@ func (tg *TaskGroup) SetStatus(s TaskStatus) {
 	tg.status = s
 }
 
-func (tg *TaskGroup) GetTaskStates() []TaskState {
-	messages := []TaskState{{
+func (tg *TaskGroup) GetTaskStates() []*TaskState {
+	messages := []*TaskState{{
 		Status:  tg.GetStatus(),
 		Message: tg.Message,
 	}}
