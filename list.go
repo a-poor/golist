@@ -149,24 +149,26 @@ func (l *List) getTaskStates() []TaskState {
 	return messages
 }
 
-// type TaskState struct {
-// 	Message string
-// 	Status  TaskStatus
-// 	Depth   int
-// }
-
-// truncateMessage will truncate the message if it's too long
-// based on the MaxLineLength parameter. If MaxLineLength is
-// 0, the message will not be truncated.
-func (l *List) truncateMessage(m string) string {
-	if l.MaxLineLength == 0 {
-		return m
-	}
+// truncateMessage will truncate the message to if it's too long
+// based on the size parameter.
+//
+// If the message is truncated, all trailing spaces will be removed
+// and an ellipsis ("…") is added to the end. An extra character
+// will be removed to fit the elipsis, if necessary. If the size
+//  is 0, an ellipsis character is still returned.
+func (l *List) truncateMessage(m string, size int) string {
 	rm := []rune(m)
-	if len(rm) < l.MaxLineLength {
+	if len(rm) <= size { // No truncation needed
 		return m
 	}
-	return string(rm[0:l.MaxLineLength])
+	if size <= 1 { // Truncate everything
+		return "…"
+	}
+
+	// Remove an extra character to fit the ellipsis
+	tsize := size - 1
+
+	return strings.TrimSuffix(string(rm[0:tsize]), " ") + "…"
 }
 
 // formatMessage formats a message row for displaying.
@@ -174,10 +176,19 @@ func (l *List) truncateMessage(m string) string {
 // and it's length is (optionally) limited by the
 // MaxLineLength parameter.
 func (l *List) formatMessage(m TaskState) string {
-	d := strings.Repeat(" ", m.Depth*IndentSize)
+	n := m.Depth * IndentSize
+	d := strings.Repeat(" ", n)
 	i := l.StatusIniicator.Get(m.Status)
-	s := fmt.Sprintf("%s%s %s", d, i, m.Message)
-	return l.truncateMessage(s)
+
+	// If no no truncate text, just return the formatted
+	// status message
+	if l.MaxLineLength == 0 {
+		return fmt.Sprintf("%s%s %s", d, i, m.Message)
+	}
+
+	// Otherwise, truncate the result
+	size := l.MaxLineLength - (n + 1)
+	return fmt.Sprintf("%s%s %s", d, i, l.truncateMessage(m.Message, size))
 }
 
 // print prints the current task states
