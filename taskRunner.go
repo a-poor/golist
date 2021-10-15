@@ -9,4 +9,6 @@ type TaskRunner interface {
 	GetSize() int          // Return the task size (number of tasks and subtasks for clearing)
 	Print(int)             // Print the task message and status indicator (based on the specified depth)
 	Clear()                // Clear the output of the task
+
+	GetTaskStates() []TaskState // Get the task states
 }

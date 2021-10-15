@@ -7,5 +7,5 @@ import (
 )
 
 func TestGolist(t *testing.T) {
-	golist.NewList()
+	golist.NewDefaultList()
 }

@@ -8,27 +8,38 @@ import (
 	"time"
 )
 
+// Default List print delay
+var DefaultListDelay = time.Millisecond * 100
+
 // List is the top-level task list.
-// Note,
 type List struct {
-	Tasks       []TaskRunner // List of tasks to run
-	FailOnError bool         // If true, the task execution stops on the first error
-	Concurrent  bool         // Should the tasks be run concurrently? NOTE: Not supported yet
-	Writer      io.Writer    // Writer to use for printing output
+	Tasks         []TaskRunner  // List of tasks to run
+	Delay         time.Duration // Delay between prints
+	FailOnError   bool          // If true, the task execution stops on the first error
+	Concurrent    bool          // Should the tasks be run concurrently? NOTE: Not supported yet
+	Writer        io.Writer     // Writer to use for printing output
+	MaxLineLength int           // Maximum line length for printing (0 = no limit)
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
 }
 
-// NewList creates a new task list that writes to stdout
-func NewList() *List {
-	return &List{Writer: os.Stdout}
+// NewList creates a new task list with some sensible defaults.
+// It writes to stdout and and has a delay of 100ms between prints.
+func NewDefaultList() *List {
+	return &List{
+		Writer: os.Stdout,
+		Delay:  DefaultListDelay,
+	}
 }
 
 // NewList creates a new task list that writes to the
 // provided io.Writer. Mostly used for testing.
 func NewListWithWriter(w io.Writer) *List {
-	return &List{Writer: w}
+	return &List{
+		Writer: w,
+		Delay:  DefaultListDelay,
+	}
 }
 
 // AddTask adds a TaskRunner to the top-level List
@@ -127,4 +138,16 @@ func (l *List) clear() {
 	for _, t := range l.Tasks {
 		t.Clear()
 	}
+}
+
+func (l *List) getTaskStates() []TaskState {
+	var messages []TaskState
+	for _, t := range l.Tasks {
+		msgs := t.GetTaskStates()
+		for _, m := range msgs {
+			m.Depth++
+		}
+		messages = append(messages, msgs...)
+	}
+	return messages
 }

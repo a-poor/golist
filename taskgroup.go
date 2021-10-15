@@ -106,3 +106,15 @@ func (tg *TaskGroup) GetSize() int {
 func (tg *TaskGroup) initStatusIndicator() {
 	tg.statusIndicator = createStatusIndicator(statusIndicatorConfig{})
 }
+
+func (tg *TaskGroup) GetTaskStates() []TaskState {
+	var messages []TaskState
+	for _, t := range tg.Tasks {
+		msgs := t.GetTaskStates()
+		for _, m := range msgs {
+			m.Depth++
+		}
+		messages = append(messages, msgs...)
+	}
+	return messages
+}
