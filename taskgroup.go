@@ -18,9 +18,9 @@ func (tg *TaskGroup) AddTask(t TaskRunner) {
 	tg.Tasks = append(tg.Tasks, t)
 }
 
-func (tg *TaskGroup) Run() error {
+func (tg *TaskGroup) Run(parentContext TaskContext) error {
 	// Create a context
-	c := tg.createContext()
+	c := tg.createContext(parentContext)
 
 	// Check if the task should be skipped
 	if tg.Skip != nil && tg.Skip(c) {
@@ -37,7 +37,7 @@ func (tg *TaskGroup) Run() error {
 			t.SetStatus(TaskSkipped)
 			continue
 		}
-		err = t.Run()
+		err = t.Run(c)
 		if err != nil && tg.FailOnError {
 			skipRemaining = true
 		}
@@ -53,10 +53,18 @@ func (tg *TaskGroup) Run() error {
 }
 
 // createContext creates a TaskContext for the task
-func (t *TaskGroup) createContext() TaskContext {
-	return &taskContext{func(msg string) {
-		t.SetMessage(msg)
-	}}
+func (t *TaskGroup) createContext(parentContext TaskContext) TaskContext {
+	return &taskContext{
+		setMessage: func(msg string) {
+			t.SetMessage(msg)
+		},
+		println: func(a ...interface{}) error {
+			return parentContext.Println(a...)
+		},
+		printfln: func(f string, a ...interface{}) error {
+			return parentContext.Printfln(f, a...)
+		},
+	}
 }
 
 func (tg *TaskGroup) SetMessage(m string) {

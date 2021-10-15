@@ -18,9 +18,9 @@ type Task struct {
 }
 
 // Run runs the task's action function
-func (t *Task) Run() error {
+func (t *Task) Run(parentContext TaskContext) error {
 	// Create a TaskContext to pass to `Skip` and `Action`
-	c := t.createContext()
+	c := t.createContext(parentContext)
 
 	// Check if the task should be skipped
 	if t.Skip != nil && t.Skip(c) {
@@ -52,10 +52,18 @@ func (t *Task) Run() error {
 }
 
 // createContext creates a TaskContext for the task
-func (t *Task) createContext() TaskContext {
-	return &taskContext{func(msg string) {
-		t.SetMessage(msg)
-	}}
+func (t *Task) createContext(parentContext TaskContext) TaskContext {
+	return &taskContext{
+		setMessage: func(msg string) {
+			t.SetMessage(msg)
+		},
+		println: func(a ...interface{}) error {
+			return parentContext.Println(a...)
+		},
+		printfln: func(f string, a ...interface{}) error {
+			return parentContext.Printfln(f, a...)
+		},
+	}
 }
 
 // SetMessage sets the Task's message text

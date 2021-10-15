@@ -13,6 +13,11 @@ import (
 // Default List print delay
 var DefaultListDelay = time.Millisecond * 100
 
+var (
+	ErrListNotRunning = errors.New("list not running")
+	ErrNoWriter       = errors.New("no writer specified")
+)
+
 // List is the top-level task list.
 type List struct {
 	Tasks           []TaskRunner     // List of tasks to run
@@ -25,6 +30,7 @@ type List struct {
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
+	printQ  chan string        // A channel for printing to the terminal while displaying the list
 }
 
 // NewList creates a new task list with some sensible defaults.
@@ -62,7 +68,7 @@ func (l *List) AddTask(t TaskRunner) {
 // this function will return an error.
 func (l *List) Start() error {
 	if l.Writer == nil {
-		return errors.New("no writer specified")
+		return ErrNoWriter
 	}
 
 	// Check if it's already displaying
@@ -74,20 +80,25 @@ func (l *List) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	l.cancel = cancel
 
+	// Create the channel for printing
+	l.printQ = make(chan string)
+
 	// Start the display loop
 	go func() {
-		ts := l.getTaskStates()
-		l.print(ts)
+		// ts := l.getTaskStates()
+		// l.print(ts)
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case s := <-l.printQ:
+				fmt.Fprintln(l.Writer, s)
 			default:
-				l.clear(ts)
-				ts = l.getTaskStates()
+				ts := l.getTaskStates()
 				l.print(ts)
 				l.StatusIniicator.Next()
 				time.Sleep(time.Millisecond * 100)
+				l.clear(ts)
 			}
 		}
 	}()
@@ -103,8 +114,19 @@ func (l *List) Run() error {
 	l.Start()
 	defer l.Stop()
 
+	// Create a "base context"
+	rootTaskCtx := taskContext{
+		setMessage: func(m string) {},
+		println: func(a ...interface{}) error {
+			return l.Println(a...)
+		},
+		printfln: func(f string, a ...interface{}) error {
+			return l.Printfln(f, a...)
+		},
+	}
+
 	for _, t := range l.Tasks {
-		if err := t.Run(); err != nil && l.FailOnError {
+		if err := t.Run(&rootTaskCtx); err != nil && l.FailOnError {
 			return err
 		}
 	}
@@ -125,6 +147,7 @@ func (l *List) Stop() {
 
 	// Send the cancel signal
 	l.cancel()
+	close(l.printQ)
 
 	// Clear and print one final time (NOTE: should this be an option?)
 	ts := l.getTaskStates()
@@ -133,6 +156,7 @@ func (l *List) Stop() {
 
 	l.running = false
 	l.cancel = nil
+	l.printQ = nil
 }
 
 // getTaskStates returns a slice of TaskStates
@@ -198,12 +222,47 @@ func (l *List) print(states []*TaskState) {
 // print prints the current task states
 func (l *List) clear(states []*TaskState) {
 	n := len(states)
-	s := ("\033[1A" + // Move up a line
-		"\033[K" + // Clear the line
-		"\r") // Move back to the beginning of the line
+	s := "\033[1A" // Move up a line
+	s += "\033[K"  // Clear the line
+	s += "\r"      // Move back to the beginning of the line
 
 	for i := 0; i < n; i++ {
 		fmt.Fprint(l.Writer, s)
 	}
+}
 
+// Println prints information to the List's Writer (which is
+// most likely stdout), like `fmt.Println`.
+//
+// Internally, it passes information to a channel that will
+// be read by the display goroutine and printed safely in
+// between updates to the task-list.
+//
+// Note: If Println is called while the list is not running,
+// it will return the error ErrListNotRunning.
+func (l *List) Println(a ...interface{}) error {
+	if l.printQ == nil {
+		return ErrNoWriter
+	}
+	s := fmt.Sprint(a...)
+	l.printQ <- s
+	return nil
+}
+
+// Printfln prints a formatted string to the list's writer
+// (which is usually stdout) before reprinting the list.
+//
+// Printfln is like Printf but adds a newline character at
+// the end of the string. It requires that there be a newline
+// character so that the list can be reprinted properly.
+//
+// Note: If Printfln is called while the list is not running,
+// it will return the error ErrListNotRunning.
+func (l *List) Printfln(f string, d ...interface{}) error {
+	if l.printQ == nil {
+		return ErrNoWriter
+	}
+	s := fmt.Sprintf(f, d...)
+	l.printQ <- s
+	return nil
 }
