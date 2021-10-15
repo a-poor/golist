@@ -31,7 +31,7 @@ go get github.com/a-poor/golist
 
 ## Dependencies
 
-...
+Just the standard library!
 
 ## Example
 
