@@ -149,7 +149,9 @@ func (l *List) Start() error {
 	return nil
 }
 
-// Run starts calling the Action functions for each task
+// Run starts running the tasks in the `List`
+// and if `FailOnError` is set to true, returns
+// an error if any of the tasks fail.
 func (l *List) Run() error {
 	l.Start()
 	defer l.Stop()
@@ -186,8 +188,12 @@ func (l *List) Stop() {
 	}
 
 	// Send the cancel signal
-	l.cancel()
-	close(l.printQ)
+	if l.cancel != nil {
+		l.cancel()
+	}
+	if l.printQ != nil {
+		close(l.printQ)
+	}
 
 	// Clear and print one final time (NOTE: should this be an option?)
 	ts := l.getTaskStates()
@@ -197,6 +203,25 @@ func (l *List) Stop() {
 	l.running = false
 	l.cancel = nil
 	l.printQ = nil
+}
+
+// RunAndWait starts to display the task list statuses,
+// runs the tasks, and waits for the tasks to complete
+// before returning.
+//
+// RunAndWait is a convenience function that combines
+// `Start`, `Run`, and `Stop`.
+func (l *List) RunAndWait() error {
+	err := l.Start()
+	if err != nil {
+		return err
+	}
+	err = l.Run()
+	if err != nil {
+		return err
+	}
+	l.Stop()
+	return nil
 }
 
 // getTaskStates returns a slice of TaskStates
