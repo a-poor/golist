@@ -1,6 +1,6 @@
 # golist
 
-![quick & early example](docs/assets/sample.gif)
+![quick & early example](docs/assets/demo.gif)
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/a-poor/golist?label=Version&style=flat-square)](https://pkg.go.dev/github.com/a-poor/golist)
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
