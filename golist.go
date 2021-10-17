@@ -67,6 +67,7 @@ type List struct {
 	Writer          io.Writer        // Writer to use for printing output
 	MaxLineLength   int              // Maximum line length for printing (0 = no limit)
 	StatusIniicator StatusIndicators // Map of statuses to status indicators
+	ClearOnComplete bool             // If true, the list will clear the list after it finishes running
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
@@ -198,7 +199,9 @@ func (l *List) Stop() {
 	// Clear and print one final time (NOTE: should this be an option?)
 	ts := l.getTaskStates()
 	l.clear(ts)
-	l.print(ts)
+	if !l.ClearOnComplete {
+		l.print(ts)
+	}
 
 	l.running = false
 	l.cancel = nil
