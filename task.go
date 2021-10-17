@@ -17,6 +17,15 @@ type Task struct {
 	err    error      // The error returned by the task function
 }
 
+// NewTask creates a new Task with the message `m`
+// and the action function `a`.
+func NewTask(m string, a func(TaskContext) error) *Task {
+	return &Task{
+		Message: m,
+		Action:  a,
+	}
+}
+
 // Run runs the task's action function
 func (t *Task) Run(parentContext TaskContext) error {
 	// Create a TaskContext to pass to `Skip` and `Action`

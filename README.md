@@ -14,14 +14,20 @@ _created by Austin Poor_
 
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr) and the [AWS Copilot CLI](https://github.com/aws/copilot-cli).
 
-Check out the documentation [here](https://a-poor.github.io/golist)!
+Check out the documentation [here](https://a-poor.github.io/golist)! _NOTE: The docs site is slightly out of date since some cool new features have been added! Check out this README for updated info and then check back with the docs later!_
 
+In a rush? Check out the [Example](##Example) and the [FAQs](##FAQ)
 
 ## Features
-* Multi-line lists print to the console
-* Output runs from a gorouting while the user's tasks run
+* Multi-line updating lists print to the console
 * Status updates live (with spinners while processing)
-* Tasks can be skipped or fail
+* Nested task groups
+* Check if tasks should be skipped or should fail
+* Safely print to stdout while the list is being displayed
+* Update the task's message while running
+* Truncate text output
+* Optionally expand/collapse a task-group's subtasks when not running
+* Task-groups can skip remaining tasks if failed
 
 ## Installation
 
@@ -178,6 +184,26 @@ list.Run()
 // Stop displaying the task-list
 list.Stop()
 ```
+
+## FAQ
+
+* Multi-line updating lists print to the console
+* Status updates live (with spinners while processing)
+* Nested task groups
+* Check if tasks should be skipped or should fail
+* Safely print to stdout while the list is being displayed
+* Update the task's message while running
+* Truncate text output
+* Optionally expand/collapse a task-group's subtasks when not running
+* Task-groups can skip remaining tasks if failed
+
+_How do I create a new list?_
+
+Most of the time, your best option is to use `golist.NewDefaultList()` -- it will set you up with some sensible defaults. Otherwise, the you'll need to at least set `Writer`, `Delay` and `StatusIndicator`.
+
+_How do I create a new `Task`/`TaskGroup`?_
+
+Both `Task`s and `TaskGroup`s can be created either with their factory functions (`NewTask`, `NewTaskGroup`) or from scratch (`Task{...}`, `TaskGroup{...}`).
 
 ## License
 

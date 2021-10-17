@@ -8,14 +8,19 @@ type TaskGroup struct {
 	Skip                    func(TaskContext) bool // Is run before the task starts. If returns true, the task isn't run
 	FailOnError             bool                   // If true, the task group stops on the first error
 	HideTasksWhenNotRunning bool                   // If true, the task group only show its sub-task-runners when actively running
+	// Concurrent bool // Should the tasks be run concurrently? // NOTE: Not supported yet
 
 	err    error      // The error that occurred during the last task
 	status TaskStatus // The status of the task
 }
 
-// NewTaskGroup creates a new default TaskGroup
-func NewTaskGroup() *TaskGroup {
-	return &TaskGroup{}
+// NewTaskGroup creates a new TaskGroup
+// with the message `m` and the tasks `ts`.
+func NewTaskGroup(m string, ts []TaskRunner) *TaskGroup {
+	return &TaskGroup{
+		Message: m,
+		Tasks:   ts,
+	}
 }
 
 // AddTask adds a TaskRunner to this TaskGroup's tasks

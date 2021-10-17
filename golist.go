@@ -60,14 +60,14 @@ func (s TaskStatus) String() string {
 
 // List is the top-level task list.
 type List struct {
-	Tasks           []TaskRunner     // List of tasks to run
-	Delay           time.Duration    // Delay between prints
-	FailOnError     bool             // If true, the task execution stops on the first error
-	Concurrent      bool             // Should the tasks be run concurrently? NOTE: Not supported yet
 	Writer          io.Writer        // Writer to use for printing output
+	Delay           time.Duration    // Delay between prints
+	StatusIndicator StatusIndicators // Map of statuses to status indicators
+	Tasks           []TaskRunner     // List of tasks to run
+	FailOnError     bool             // If true, the task execution stops on the first error
 	MaxLineLength   int              // Maximum line length for printing (0 = no limit)
-	StatusIniicator StatusIndicators // Map of statuses to status indicators
 	ClearOnComplete bool             // If true, the list will clear the list after it finishes running
+	// Concurrent      bool             // Should the tasks be run concurrently? NOTE: Not supported yet
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
@@ -80,7 +80,7 @@ func NewDefaultList() *List {
 	return &List{
 		Writer:          os.Stdout,
 		Delay:           DefaultListDelay,
-		StatusIniicator: CreateDefaultStatusIndicator(),
+		StatusIndicator: CreateDefaultStatusIndicator(),
 	}
 }
 
@@ -90,7 +90,7 @@ func NewListWithWriter(w io.Writer) *List {
 	return &List{
 		Writer:          w,
 		Delay:           DefaultListDelay,
-		StatusIniicator: CreateDefaultStatusIndicator(),
+		StatusIndicator: CreateDefaultStatusIndicator(),
 	}
 }
 
@@ -137,7 +137,7 @@ func (l *List) Start() error {
 			default:
 				ts := l.getTaskStates()
 				l.print(ts)
-				l.StatusIniicator.Next()
+				l.StatusIndicator.Next()
 				time.Sleep(time.Millisecond * 100)
 				l.clear(ts)
 			}
@@ -267,7 +267,7 @@ func (l *List) truncateMessage(m string, size int) string {
 func (l *List) formatMessage(m *TaskState) string {
 	n := m.Depth * IndentSize
 	d := strings.Repeat(" ", n)
-	i := l.StatusIniicator.Get(m.Status)
+	i := l.StatusIndicator.Get(m.Status)
 
 	// If no no truncate text, just return the formatted
 	// status message
