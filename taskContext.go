@@ -13,14 +13,18 @@ type taskContext struct {
 	printfln   func(string, ...interface{}) error
 }
 
+// SetMessage updates the task's status message
+// while running
 func (tc *taskContext) SetMessage(msg string) {
 	tc.setMessage(msg)
 }
 
+// Println prints text safely between list updates
 func (tc *taskContext) Println(a ...interface{}) error {
 	return tc.println(a...)
 }
 
+// Printfln prints formatted text safely between list updates
 func (tc *taskContext) Printfln(f string, a ...interface{}) error {
 	return tc.printfln(f, a...)
 }

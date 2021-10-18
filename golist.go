@@ -7,7 +7,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // IndentSize is the number of spaces to indent each line
@@ -67,11 +70,12 @@ type List struct {
 	FailOnError     bool             // If true, the task execution stops on the first error
 	MaxLineLength   int              // Maximum line length for printing (0 = no limit)
 	ClearOnComplete bool             // If true, the list will clear the list after it finishes running
-	// Concurrent      bool             // Should the tasks be run concurrently? NOTE: Not supported yet
+	Concurrent      bool             // Should the tasks be run concurrently?
 
-	running bool               // Is the list running?
-	cancel  context.CancelFunc // A context cancel function for stopping the list run
-	printQ  chan string        // A channel for printing to the terminal while displaying the list
+	running   bool               // Is the list running?
+	printDone chan bool          // Is the print loop done?
+	cancel    context.CancelFunc // A context cancel function for stopping the list run
+	printQ    chan string        // A channel for printing to the terminal while displaying the list
 }
 
 // NewList creates a new task list with some sensible defaults.
@@ -95,11 +99,17 @@ func NewListWithWriter(w io.Writer) *List {
 }
 
 // AddTask adds a TaskRunner to the top-level List
-func (l *List) AddTask(t TaskRunner) {
+// and returns a pointer to itself.
+func (l *List) AddTask(t TaskRunner) *List {
 	if l.Tasks == nil {
 		l.Tasks = make([]TaskRunner, 0)
 	}
 	l.Tasks = append(l.Tasks, t)
+	return l
+}
+
+func (l *List) sendPrintStop() {
+	l.printDone <- true
 }
 
 // Start begins displaying the list statuses
@@ -124,10 +134,11 @@ func (l *List) Start() error {
 	// Create the channel for printing
 	l.printQ = make(chan string)
 
+	l.printDone = make(chan bool)
+
 	// Start the display loop
 	go func() {
-		// ts := l.getTaskStates()
-		// l.print(ts)
+		defer l.sendPrintStop()
 		for {
 			select {
 			case <-ctx.Done():
@@ -150,6 +161,38 @@ func (l *List) Start() error {
 	return nil
 }
 
+// runSync runs the TaskRunners in this TaskGroup synchronously
+func (l *List) runSync(c TaskContext) error {
+	var skipRemaining bool
+	for _, t := range l.Tasks {
+		if skipRemaining {
+			t.SetStatus(TaskSkipped)
+			continue
+		}
+		err := t.Run(c)
+		if err != nil && l.FailOnError {
+			skipRemaining = true
+		}
+	}
+	return l.GetError()
+}
+
+// runAsync runs the TaskRunners in this TaskGroup concurrently
+// and blocks until they are all done.
+func (l *List) runAsync(c TaskContext) error {
+	var wg sync.WaitGroup
+	for _, t := range l.Tasks {
+		wg.Add(1)
+		go func(t TaskRunner) {
+			defer wg.Done()
+			t.Run(c)
+		}(t)
+	}
+	wg.Wait()
+	time.Sleep(l.Delay)
+	return l.GetError()
+}
+
 // Run starts running the tasks in the `List`
 // and if `FailOnError` is set to true, returns
 // an error if any of the tasks fail.
@@ -158,7 +201,7 @@ func (l *List) Run() error {
 	defer l.Stop()
 
 	// Create a "base context"
-	rootTaskCtx := taskContext{
+	rootTaskCtx := &taskContext{
 		setMessage: func(m string) {},
 		println: func(a ...interface{}) error {
 			return l.Println(a...)
@@ -168,13 +211,17 @@ func (l *List) Run() error {
 		},
 	}
 
-	for _, t := range l.Tasks {
-		if err := t.Run(&rootTaskCtx); err != nil && l.FailOnError {
-			return err
-		}
+	// If running concurrently...
+	var err error
+	if l.Concurrent {
+		err = l.runAsync(rootTaskCtx)
+	} else {
+		// Otherwise, run synchronously
+		err = l.runSync(rootTaskCtx)
 	}
 
-	return nil
+	// Return the error
+	return err
 }
 
 // Stop stops displaying the task list statuses and
@@ -195,6 +242,8 @@ func (l *List) Stop() {
 	if l.printQ != nil {
 		close(l.printQ)
 	}
+
+	<-l.printDone
 
 	// Clear and print one final time (NOTE: should this be an option?)
 	ts := l.getTaskStates()
@@ -333,4 +382,12 @@ func (l *List) Printfln(f string, d ...interface{}) error {
 	s := fmt.Sprintf(f, d...)
 	l.printQ <- s
 	return nil
+}
+
+func (l *List) GetError() error {
+	var err *multierror.Error
+	for _, t := range l.Tasks {
+		err = multierror.Append(err, t.GetError())
+	}
+	return err.ErrorOrNil()
 }
