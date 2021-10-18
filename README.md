@@ -9,6 +9,7 @@
 ![GitHub](https://img.shields.io/github/license/a-poor/golist?style=flat-square)
 [![Go Report Card](https://goreportcard.com/badge/github.com/a-poor/golist)](https://goreportcard.com/report/github.com/a-poor/golist)
 [![Sourcegraph](https://sourcegraph.com/github.com/a-poor/golist/-/badge.svg)](https://sourcegraph.com/github.com/a-poor/golist?badge)
+[![codecov](https://codecov.io/gh/a-poor/golist/branch/main/graph/badge.svg?token=3PDSW7B2HC)](https://codecov.io/gh/a-poor/golist)
 
 _created by Austin Poor_
 
