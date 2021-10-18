@@ -67,8 +67,12 @@ func (s TaskStatus) String() string {
 // Generally, you'll want to use the `NewList`
 // to create a new list with some sensible defaults.
 //
-// Otherwise, when creating a new list, you'll at
-// least need to set `Writer`, `Delay`, and `StatusIndicator`.
+// If `Writer` is not set, it will be set to `os.Stdout`.
+// If `StatusIndicator` is not set it will default
+// to using the "–" character for all list items.
+//
+// Typically, you'll at least want to set `Writer`,
+// `Delay`, and `StatusIndicator`.
 type List struct {
 	Writer          io.Writer        // Writer to use for printing output
 	Delay           time.Duration    // Delay between prints
@@ -160,6 +164,23 @@ func (l *List) Start() {
 	l.running = true
 }
 
+// createRootContext creates a base TaskContext to be passed
+// down to the subtasks to create sub-contexts.
+//
+// Note: The SetMessage function is a no-op, since the
+// top-level list doesn't have a message to set.
+func (l *List) createRootContext() TaskContext {
+	return &taskContext{
+		setMessage: func(m string) {},
+		println: func(a ...interface{}) error {
+			return l.Println(a...)
+		},
+		printfln: func(f string, a ...interface{}) error {
+			return l.Printfln(f, a...)
+		},
+	}
+}
+
 // runSync runs the TaskRunners in this TaskGroup synchronously
 func (l *List) runSync(c TaskContext) error {
 	var skipRemaining bool
@@ -199,18 +220,11 @@ func (l *List) Run() error {
 	// Starts the list if it hasn't already started
 	l.Start()
 
-	// Create a "base context"
-	rootTaskCtx := &taskContext{
-		setMessage: func(m string) {},
-		println: func(a ...interface{}) error {
-			return l.Println(a...)
-		},
-		printfln: func(f string, a ...interface{}) error {
-			return l.Printfln(f, a...)
-		},
-	}
+	// Create a "base context" to be passed down
+	// for subtasks to create TaskContexts
+	rootTaskCtx := l.createRootContext()
 
-	// If running concurrently...
+	// Check if running concurrently...
 	var err error
 	if l.Concurrent {
 		err = l.runAsync(rootTaskCtx)

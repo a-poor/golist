@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestGolist(t *testing.T) {
@@ -31,6 +32,8 @@ func TestGolist_Run(t *testing.T) {
 
 	// Start displaying the task status
 	list.Start()
+	list.Start()
+	list.Start()
 
 	// Run the tasks
 	if err := list.Run(); err != nil {
@@ -38,6 +41,8 @@ func TestGolist_Run(t *testing.T) {
 	}
 
 	// Stop displaying the task status
+	list.Stop()
+	list.Stop()
 	list.Stop()
 }
 
@@ -103,4 +108,57 @@ func TestList_NoWriter(t *testing.T) {
 	} else if l.Writer != os.Stdout {
 		t.Errorf("list's writer auto-set to something other than stdout, %q", l.Writer)
 	}
+}
+
+func TestNewListWithWriter(t *testing.T) {
+	w := &bytes.Buffer{}
+	l := NewListWithWriter(w)
+	if l.Writer != w {
+		t.Errorf("list's writer should have been set to %q, got %q", w, l.Writer)
+	}
+}
+
+func TestList_runAsync(t *testing.T) {
+	l := NewList()
+	l.Concurrent = true
+	l.Writer = &bytes.Buffer{}
+
+	var t0Start bool
+	var t0Stop bool
+
+	l.AddTask(&Task{
+		Message: "t0",
+		Action: func(c TaskContext) error {
+			t0Start = true
+			time.Sleep(time.Millisecond * 100)
+			t0Stop = true
+			return nil
+		},
+	})
+
+	l.AddTask(&Task{
+		Message: "t1",
+		Action: func(c TaskContext) error {
+			time.Sleep(time.Millisecond * 10)
+			if !t0Start {
+				t.Error("t0 should have started already")
+			}
+			if t0Stop {
+				t.Error("t0 shouldn't have finished yet")
+			}
+			return nil
+		},
+	})
+
+	// Start displaying the task status
+	l.RunAndWait()
+}
+
+func TestList_createRootContext(t *testing.T) {
+	l := NewList()
+	l.Writer = &bytes.Buffer{}
+	c := l.createRootContext()
+	c.SetMessage("")
+	c.Println("")
+	c.Printfln("")
 }
