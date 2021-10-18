@@ -248,6 +248,12 @@ func TestListTruncate(t *testing.T) {
 	if n := l.truncateMessage(m, i); n != e {
 		t.Errorf("expected %q, got %q", e, n)
 	}
+
+	i = 80
+	m = "this shouldn't be cutoff"
+	if n := l.truncateMessage(m, i); n != m {
+		t.Errorf("expected %q, got %q", e, m)
+	}
 }
 
 func TestListTruncate2(t *testing.T) {
