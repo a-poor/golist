@@ -1,28 +1,29 @@
-package golist_test
+package golist
 
 import (
+	"bytes"
 	"errors"
-	"github.com/a-poor/golist"
 	"testing"
 )
 
 func TestGolist(t *testing.T) {
-	golist.NewDefaultList()
+	_ = NewDefaultList()
 }
 
 func TestGolist_Run(t *testing.T) {
-	list := golist.NewDefaultList()
+	list := NewDefaultList()
+	list.Writer = &bytes.Buffer{}
 
-	list.AddTask(&golist.Task{
+	list.AddTask(&Task{
 		Message: "t0",
-		Action: func(c golist.TaskContext) error {
+		Action: func(c TaskContext) error {
 			return nil
 		},
 	})
 
-	list.AddTask(&golist.Task{
+	list.AddTask(&Task{
 		Message: "t1",
-		Action: func(c golist.TaskContext) error {
+		Action: func(c TaskContext) error {
 			return nil
 		},
 	})
@@ -42,18 +43,19 @@ func TestGolist_Run(t *testing.T) {
 }
 
 func TestGolist_RunWithErrors(t *testing.T) {
-	list := golist.NewDefaultList()
+	list := NewDefaultList()
+	list.Writer = &bytes.Buffer{}
 
-	list.AddTask(&golist.Task{
+	list.AddTask(&Task{
 		Message: "t0",
-		Action: func(c golist.TaskContext) error {
+		Action: func(c TaskContext) error {
 			return nil
 		},
 	})
 
-	list.AddTask(&golist.Task{
+	list.AddTask(&Task{
 		Message: "t1",
-		Action: func(c golist.TaskContext) error {
+		Action: func(c TaskContext) error {
 			return errors.New("oops")
 		},
 	})
