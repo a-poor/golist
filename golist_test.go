@@ -210,7 +210,8 @@ func TestListSkipRemaining(t *testing.T) {
 		t2Ran = true
 		return nil
 	}))
-	l.RunAndWait()
+	l.Start()
+	l.runSync(l.createRootContext())
 
 	if !t0Ran {
 		t.Error("t0 should have run")
@@ -226,11 +227,27 @@ func TestListSkipRemaining(t *testing.T) {
 func TestListTruncate(t *testing.T) {
 	l := NewList()
 	l.Writer = &bytes.Buffer{}
-	l.MaxLineLength = 25
-	l.AddTask(NewTask("this should be cutoff because it's too long", func(c TaskContext) error {
-		return nil
-	}))
-	l.RunAndWait()
+
+	i := 25
+	m := "this should be cutoff because it's too long"
+	e := "this should be cutoff be…"
+	if n := l.truncateMessage(m, i); n != e {
+		t.Errorf("expected %q, got %q", e, n)
+	}
+
+	i = 1
+	m = "this should be cutoff because it's too long"
+	e = "…"
+	if n := l.truncateMessage(m, i); n != e {
+		t.Errorf("expected %q, got %q", e, n)
+	}
+
+	i = 0
+	m = "this should be cutoff because it's too long"
+	e = "…"
+	if n := l.truncateMessage(m, i); n != e {
+		t.Errorf("expected %q, got %q", e, n)
+	}
 }
 
 func TestListTruncate2(t *testing.T) {
