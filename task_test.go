@@ -114,5 +114,43 @@ func TestTask_SetMessage(t *testing.T) {
 }
 
 func TestTask_createContext(t *testing.T) {
+	orgMsg := "original"
+	newMsg := "new"
+	var lnCalled bool
+	var flnCalled bool
 
+	// Create a parent context
+	c := &taskContext{
+		setMessage: func(m string) {},
+		println: func(a ...interface{}) error {
+			lnCalled = true
+			return nil
+		},
+		printfln: func(f string, a ...interface{}) error {
+			flnCalled = true
+			return nil
+		},
+	}
+
+	// Create a task
+	k := &Task{
+		Message: orgMsg,
+		Action: func(c TaskContext) error {
+			c.SetMessage(newMsg)
+			c.Println()
+			c.Printfln("")
+			return nil
+		},
+	}
+	k.Run(c)
+
+	if k.Message != newMsg {
+		t.Errorf("expected new message %q, got %q", newMsg, k.Message)
+	}
+	if !lnCalled {
+		t.Error("println function was never called")
+	}
+	if !flnCalled {
+		t.Error("printfln function never called")
+	}
 }
