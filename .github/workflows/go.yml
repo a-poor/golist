@@ -21,5 +21,7 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-    - name: Test
-      run: go test -v ./...
+    - name: Test and Coverage
+      run: go test -race -coverprofile=coverage.out -covermode=atomic -v ./...
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
