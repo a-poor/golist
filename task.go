@@ -100,6 +100,8 @@ func (t *Task) SetStatus(s TaskStatus) {
 	t.status = s
 }
 
+// GetTaskTates returns the TaskState description
+// of the current task
 func (t *Task) GetTaskStates() []*TaskState {
 	return []*TaskState{{
 		Message: t.Message,
