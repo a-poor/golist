@@ -1,13 +1,15 @@
 # golist
 
-![Sample GIF](assets/sample.gif)
+<img src="./assets/example-nested-tasks.gif" width="500"/>
 
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/a-poor/golist?label=Version&style=flat-square)](https://pkg.go.dev/github.com/a-poor/golist)
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-poor/golist.svg)](https://pkg.go.dev/github.com/a-poor/golist)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/a-poor/golist/Go?style=flat-square)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/a-poor/golist?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/a-poor/golist?style=flat-square)
 [![Go Report Card](https://goreportcard.com/badge/github.com/a-poor/golist)](https://goreportcard.com/report/github.com/a-poor/golist)
 [![Sourcegraph](https://sourcegraph.com/github.com/a-poor/golist/-/badge.svg)](https://sourcegraph.com/github.com/a-poor/golist?badge)
+[![codecov](https://codecov.io/gh/a-poor/golist/branch/main/graph/badge.svg?token=3PDSW7B2HC)](https://codecov.io/gh/a-poor/golist)
 
 _created by Austin Poor_
 
@@ -15,63 +17,66 @@ _created by Austin Poor_
 
 A terminal task-list tool for Go. Inspired by the Node package [listr](https://www.npmjs.com/package/listr).
 
+Also check out the [GitHub repo](https://github.com/a-poor/golist) or the [Go docs](https://pkg.go.dev/github.com/a-poor/golist).
+
+## Feature Overview
+
+* Multi-line updating lists print to the console
+* Status updates live (with spinners while processing)
+* Nested task groups
+* Optionally run tasks concurrently
+* Check if tasks should be skipped or should fail
+* Safely print to stdout while the list is being displayed
+* Update the task's message while running
+* Truncate text output
+* Optionally expand/collapse a task-group's subtasks when not running
+* Optionally skip remaining tasks if one fails in a list or sub-group
+
+## Installation
+
+```sh
+go get github.com/a-poor/golist
+```
+
+## Dependencies
+
+* Standard library
+* [Go-MultiError](https://github.com/hashicorp/go-multierror), for returning multiple sub-task errors
+
 ## Quickstart
 
-Install golist with:
-
-```bash
-$ go get github.com/a-poor/golist
-```
-
-And create a task-list:
+Here's a quick example of `golist` in action:
 
 ```go
-// Create a list
-list := golist.List{}
+// Create a new list
+l := golist.NewList()
 
-// Add some tasks!
-// This task runs and succeeds
-list.AddTask(&golist.Task{
-    Message: "Start with this",
-    Action: func() error {
-        time.Sleep(time.Second / 2)
-        return nil
-    },
-})
-// This task is skipped
-list.AddTask(&golist.Task{
-    Message: "Then skip this",
-    Skip: func() bool {
-        return true
-    },
-    Action: func() error {
-        time.Sleep(time.Second / 4)
-        return nil
-    },
-})
-// And this task runs but fails
-list.AddTask(&golist.Task{
-    Message: "And finally, this should fail",
-    Action: func() error {
-        time.Sleep(time.Second / 3)
-        return errors.New("oops")
-    },
-})
-
-// Start displaying the task status
-list.Start()
+// Add some tasks
+l.AddTask(golist.NewTask("Get a pen", func(c golist.TaskContext) error {
+    time.Sleep(time.Second)
+    return nil
+}))
+l.AddTask(golist.NewTask("Get some paper", func(c golist.TaskContext) error {
+    time.Sleep(time.Second)
+    return nil
+}))
+l.AddTask(golist.NewTask("Write a novel", func(c golist.TaskContext) error {
+    time.Sleep(time.Second)
+    return nil
+}))
 
 // Run the tasks
-list.Run()
-
-// Stop displaying the task status
-list.Stop()
+l.RunAndWait()
 ```
 
-## Etc
+## License
 
-Let me know what you think of `golist`! I'd love any feedback you have. 
+[MIT](./LICENSE)
 
-Please feel free to submit an issue or a pr!
+## Contributing
+
+Pull requests are super welcome! For major changes, please open an issue first to discuss what you would like to change. And please make sure to update tests as appropriate.
+
+Or... feel free to just open an issue with some thoughts or suggestions or even just to say Hi and tell me if this library has been helpful!
 
 
