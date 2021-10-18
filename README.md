@@ -45,7 +45,7 @@ Here's a quick example of `golist` in action:
 
 ```go
 // Create a list
-list := golist.NewDefaultList()
+list := golist.NewList()
 
 // Add some tasks!
 // This task runs and succeeds
@@ -90,7 +90,7 @@ And here's a slightly longer example, showing a few more of `golist`'s features:
 
 ```go
 // Create a new list
-list := golist.NewDefaultList()
+list := golist.NewList()
 
 // Add some tasks
 list.AddTask(&golist.Task{
@@ -199,7 +199,7 @@ list.Stop()
 
 _How do I create a new list?_
 
-Most of the time, your best option is to use `golist.NewDefaultList()` -- it will set you up with some sensible defaults. Otherwise, the you'll need to at least set `Writer`, `Delay` and `StatusIndicator`.
+Most of the time, your best option is to use `golist.NewList()` -- it will set you up with some sensible defaults. Otherwise, the you'll need to at least set `Writer`, `Delay` and `StatusIndicator`.
 
 _How do I create a new `Task`/`TaskGroup`?_
 
