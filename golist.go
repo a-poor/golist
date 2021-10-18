@@ -154,8 +154,8 @@ func (l *List) Start() error {
 // and if `FailOnError` is set to true, returns
 // an error if any of the tasks fail.
 func (l *List) Run() error {
+	// Starts the list if it hasn't already started
 	l.Start()
-	defer l.Stop()
 
 	// Create a "base context"
 	rootTaskCtx := taskContext{
