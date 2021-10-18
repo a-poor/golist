@@ -5,6 +5,6 @@ type TaskRunner interface {
 	SetMessage(string)           // Set the task message
 	GetStatus() TaskStatus       // Get the task status
 	SetStatus(TaskStatus)        // Set the task status
-	SetError(error)              // Set the task error
+	GetError() error             // Set the task error
 	GetTaskStates() []*TaskState // Get the task states
 }

@@ -7,7 +7,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // IndentSize is the number of spaces to indent each line
@@ -58,16 +61,23 @@ func (s TaskStatus) String() string {
 	}
 }
 
-// List is the top-level task list.
+// List is the top-level list object that
+// represents a group of tasks to be run.
+//
+// Generally, you'll want to use the `NewList`
+// to create a new list with some sensible defaults.
+//
+// Otherwise, when creating a new list, you'll at
+// least need to set `Writer`, `Delay`, and `StatusIndicator`.
 type List struct {
 	Writer          io.Writer        // Writer to use for printing output
 	Delay           time.Duration    // Delay between prints
 	StatusIndicator StatusIndicators // Map of statuses to status indicators
 	Tasks           []TaskRunner     // List of tasks to run
-	FailOnError     bool             // If true, the task execution stops on the first error
+	FailOnError     bool             // If true, the task execution stops on the first error. Note: this will be ignored if Concurrent is true.
 	MaxLineLength   int              // Maximum line length for printing (0 = no limit)
 	ClearOnComplete bool             // If true, the list will clear the list after it finishes running
-	// Concurrent      bool             // Should the tasks be run concurrently? NOTE: Not supported yet
+	Concurrent      bool             // Should the tasks be run concurrently? Note: If true, ignores the FailOnError flag
 
 	running bool               // Is the list running?
 	cancel  context.CancelFunc // A context cancel function for stopping the list run
@@ -76,7 +86,7 @@ type List struct {
 
 // NewList creates a new task list with some sensible defaults.
 // It writes to stdout and and has a delay of 100ms between prints.
-func NewDefaultList() *List {
+func NewList() *List {
 	return &List{
 		Writer:          os.Stdout,
 		Delay:           DefaultListDelay,
@@ -95,26 +105,28 @@ func NewListWithWriter(w io.Writer) *List {
 }
 
 // AddTask adds a TaskRunner to the top-level List
-func (l *List) AddTask(t TaskRunner) {
+// and returns a pointer to itself.
+func (l *List) AddTask(t TaskRunner) *List {
 	if l.Tasks == nil {
 		l.Tasks = make([]TaskRunner, 0)
 	}
 	l.Tasks = append(l.Tasks, t)
+	return l
 }
 
 // Start begins displaying the list statuses
 // from a background goroutine.
 //
 // Note: If the list is created without a writer,
-// this function will return an error.
-func (l *List) Start() error {
+// it will be set to `os.Stdout`.
+func (l *List) Start() {
 	if l.Writer == nil {
-		return ErrNoWriter
+		l.Writer = os.Stdout
 	}
 
 	// Check if it's already displaying
 	if l.running {
-		return nil
+		return
 	}
 
 	// Create a cancelable context
@@ -126,15 +138,15 @@ func (l *List) Start() error {
 
 	// Start the display loop
 	go func() {
-		// ts := l.getTaskStates()
-		// l.print(ts)
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx.Done(): // Check if the print loop should stop
 				return
-			case s := <-l.printQ:
+
+			case s := <-l.printQ: // Check if there's a message to print
 				fmt.Fprintln(l.Writer, s)
-			default:
+
+			default: // Otherwise, print the list
 				ts := l.getTaskStates()
 				l.print(ts)
 				l.StatusIndicator.Next()
@@ -146,8 +158,38 @@ func (l *List) Start() error {
 
 	// Set the running flag
 	l.running = true
+}
 
-	return nil
+// runSync runs the TaskRunners in this TaskGroup synchronously
+func (l *List) runSync(c TaskContext) error {
+	var skipRemaining bool
+	for _, t := range l.Tasks {
+		if skipRemaining {
+			t.SetStatus(TaskSkipped)
+			continue
+		}
+		err := t.Run(c)
+		if err != nil && l.FailOnError {
+			skipRemaining = true
+		}
+	}
+	return l.GetError()
+}
+
+// runAsync runs the TaskRunners in this TaskGroup concurrently
+// and blocks until they are all done.
+func (l *List) runAsync(c TaskContext) error {
+	var wg sync.WaitGroup
+	for _, t := range l.Tasks {
+		wg.Add(1)
+		go func(t TaskRunner, c TaskContext) {
+			defer wg.Done()
+			t.Run(c)
+		}(t, c)
+	}
+	wg.Wait()
+	time.Sleep(l.Delay)
+	return l.GetError()
 }
 
 // Run starts running the tasks in the `List`
@@ -158,7 +200,7 @@ func (l *List) Run() error {
 	l.Start()
 
 	// Create a "base context"
-	rootTaskCtx := taskContext{
+	rootTaskCtx := &taskContext{
 		setMessage: func(m string) {},
 		println: func(a ...interface{}) error {
 			return l.Println(a...)
@@ -168,20 +210,24 @@ func (l *List) Run() error {
 		},
 	}
 
-	for _, t := range l.Tasks {
-		if err := t.Run(&rootTaskCtx); err != nil && l.FailOnError {
-			return err
-		}
+	// If running concurrently...
+	var err error
+	if l.Concurrent {
+		err = l.runAsync(rootTaskCtx)
+	} else {
+		// Otherwise, run synchronously
+		err = l.runSync(rootTaskCtx)
 	}
 
-	return nil
+	// Return the error
+	return err
 }
 
 // Stop stops displaying the task list statuses and
 // cancels the background goroutine.
 //
-// Note: Stop also calls the `clear` and `print` functions
-// one final time each before finishing.
+// Stop also clears and prints one final time
+// before finishing.
 func (l *List) Stop() {
 	// Check if it's already NOT displaying
 	if !l.running {
@@ -215,11 +261,8 @@ func (l *List) Stop() {
 // RunAndWait is a convenience function that combines
 // `Start`, `Run`, and `Stop`.
 func (l *List) RunAndWait() error {
-	err := l.Start()
-	if err != nil {
-		return err
-	}
-	err = l.Run()
+	l.Start()
+	err := l.Run()
 	if err != nil {
 		return err
 	}
@@ -333,4 +376,13 @@ func (l *List) Printfln(f string, d ...interface{}) error {
 	s := fmt.Sprintf(f, d...)
 	l.printQ <- s
 	return nil
+}
+
+// GetError returns the errors from the child tasks
+func (l *List) GetError() error {
+	var err *multierror.Error
+	for _, t := range l.Tasks {
+		err = multierror.Append(err, t.GetError())
+	}
+	return err.ErrorOrNil()
 }

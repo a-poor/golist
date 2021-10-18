@@ -85,6 +85,11 @@ func (t *Task) SetError(err error) {
 	t.err = err
 }
 
+// GetError returns Task's error value, if there is one
+func (t *Task) GetError() error {
+	return t.err
+}
+
 // GetStatus returns the Task's status
 func (t *Task) GetStatus() TaskStatus {
 	return t.status

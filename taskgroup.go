@@ -1,5 +1,11 @@
 package golist
 
+import (
+	"sync"
+
+	"github.com/hashicorp/go-multierror"
+)
+
 // TaskGroup represents a group of TaskRunners
 // for running nested tasks within a TaskList
 type TaskGroup struct {
@@ -8,9 +14,8 @@ type TaskGroup struct {
 	Skip                    func(TaskContext) bool // Is run before the task starts. If returns true, the task isn't run
 	FailOnError             bool                   // If true, the task group stops on the first error
 	HideTasksWhenNotRunning bool                   // If true, the task group only show its sub-task-runners when actively running
-	// Concurrent bool // Should the tasks be run concurrently? // NOTE: Not supported yet
+	Concurrent              bool                   // Should the tasks be run concurrently?
 
-	err    error      // The error that occurred during the last task
 	status TaskStatus // The status of the task
 }
 
@@ -24,8 +29,40 @@ func NewTaskGroup(m string, ts []TaskRunner) *TaskGroup {
 }
 
 // AddTask adds a TaskRunner to this TaskGroup's tasks
-func (tg *TaskGroup) AddTask(t TaskRunner) {
+// and returns a pointer to itself.
+func (tg *TaskGroup) AddTask(t TaskRunner) *TaskGroup {
 	tg.Tasks = append(tg.Tasks, t)
+	return tg
+}
+
+// runSync runs the TaskRunners in this TaskGroup synchronously
+func (tg *TaskGroup) runSync(c TaskContext) error {
+	var skipRemaining bool
+	for _, t := range tg.Tasks {
+		if skipRemaining {
+			t.SetStatus(TaskSkipped)
+			continue
+		}
+		err := t.Run(c)
+		if err != nil && tg.FailOnError {
+			skipRemaining = true
+		}
+	}
+	return tg.GetError()
+}
+
+// runAsync runs the TaskRunners in this TaskGroup concurrently
+// and blocks until they are all done.
+func (tg *TaskGroup) runAsync(c TaskContext) error {
+	var wg sync.WaitGroup
+	for _, t := range tg.Tasks {
+		wg.Add(1)
+		go func(t TaskRunner) {
+			defer wg.Done()
+			t.Run(c)
+		}(t)
+	}
+	return tg.GetError()
 }
 
 // Run runs the TaskRunners in this TaskGroup
@@ -39,27 +76,26 @@ func (tg *TaskGroup) Run(parentContext TaskContext) error {
 		return nil
 	}
 
-	// Run the tasks
+	// Prepare to run
 	tg.SetStatus(TaskInProgress)
+
 	var err error
-	var skipRemaining bool
-	for _, t := range tg.Tasks {
-		if skipRemaining {
-			t.SetStatus(TaskSkipped)
-			continue
-		}
-		err = t.Run(c)
-		if err != nil && tg.FailOnError {
-			skipRemaining = true
-		}
+	if tg.Concurrent {
+		// Run concurrently...
+		err = tg.runAsync(c)
+	} else {
+		// Otherwise, run synchronously
+		err = tg.runSync(c)
 	}
 
-	// Set the final status
+	// Update the TaskGroup's status
 	if err != nil {
 		tg.SetStatus(TaskFailed)
 	} else {
 		tg.SetStatus(TaskCompleted)
 	}
+
+	// Return the error
 	return err
 }
 
@@ -83,14 +119,13 @@ func (tg *TaskGroup) SetMessage(m string) {
 	tg.Message = m
 }
 
-// GetError returns this TaskGroup's error, if any
+// GetError returns this TaskGroup's errors, if any
 func (tg *TaskGroup) GetError() error {
-	return tg.err
-}
-
-// SetError sets this TaskGroup's error value
-func (tg *TaskGroup) SetError(err error) {
-	tg.err = err
+	var err *multierror.Error
+	for _, t := range tg.Tasks {
+		err = multierror.Append(err, t.GetError())
+	}
+	return err.ErrorOrNil()
 }
 
 // GetStatus returns this TaskGroup's TaskStatus

@@ -7,11 +7,11 @@ import (
 )
 
 func TestGolist(t *testing.T) {
-	_ = NewDefaultList()
+	_ = NewList()
 }
 
 func TestGolist_Run(t *testing.T) {
-	list := NewDefaultList()
+	list := NewList()
 	list.Writer = &bytes.Buffer{}
 
 	list.AddTask(&Task{
@@ -29,9 +29,7 @@ func TestGolist_Run(t *testing.T) {
 	})
 
 	// Start displaying the task status
-	if err := list.Start(); err != nil {
-		t.Fatal(err)
-	}
+	list.Start()
 
 	// Run the tasks
 	if err := list.Run(); err != nil {
@@ -43,7 +41,7 @@ func TestGolist_Run(t *testing.T) {
 }
 
 func TestGolist_RunWithErrors(t *testing.T) {
-	list := NewDefaultList()
+	list := NewList()
 	list.Writer = &bytes.Buffer{}
 
 	list.AddTask(&Task{
@@ -61,13 +59,11 @@ func TestGolist_RunWithErrors(t *testing.T) {
 	})
 
 	// Start displaying the task status
-	if err := list.Start(); err != nil {
-		t.Fatal(err)
-	}
+	list.Start()
 
 	// Run the tasks
-	if err := list.Run(); err != nil {
-		t.Fatal(err)
+	if err := list.Run(); err == nil {
+		t.Fatalf("Expected 1 error and got %q", err)
 	}
 
 	// Stop displaying the task status
