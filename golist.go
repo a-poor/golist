@@ -156,9 +156,16 @@ func (l *List) Start() {
 		for {
 			select {
 			case <-ctx.Done(): // Check if the print loop should stop
+
+				// Perform a final clear and an optional print
+				// depending on `ClearOnComplete`
 				ts := l.getTaskStates()
+				if l.ClearOnComplete {
+					l.clear(ts)
+					return
+				}
+
 				l.clearThenPrint(ts)
-				l.StatusIndicator.Next()
 				return
 
 			case s := <-l.printQ: // Check if there's a message to print
@@ -272,16 +279,6 @@ func (l *List) Stop() {
 	// Wait for the print loop to finish
 	<-l.printDone
 
-	// Clear and print one final time (NOTE: should this be an option?)
-	// if !l.ClearOnComplete {
-	// 	ts := l.getTaskStates()
-	// 	l.print(ts)
-	// }
-	if l.ClearOnComplete {
-		ts := l.getTaskStates()
-		l.clear(ts)
-	}
-
 	l.running = false
 	l.cancel = nil
 	l.printQ = nil
@@ -353,6 +350,8 @@ func (l *List) formatMessage(m *TaskState) string {
 	return fmt.Sprintf("%s%s %s", d, i, l.truncateMessage(m.Message, size))
 }
 
+// fmtPrint returns the formatted list of messages
+// and statuses, using the supplied TaskStates
 func (l *List) fmtPrint(ts []*TaskState) string {
 	s := make([]string, 0)
 	for _, t := range ts {
@@ -364,9 +363,11 @@ func (l *List) fmtPrint(ts []*TaskState) string {
 // print prints the current task states
 func (l *List) print(states []*TaskState) {
 	s := l.fmtPrint(states)
-	fmt.Fprintln(l.Writer, "*", s)
+	fmt.Fprintln(l.Writer, s)
 }
 
+// fmtClear returns a string of ANSI escape characters
+// to clear the `n` lines previously printed.
 func (l *List) fmtClear(n int) string {
 	s := "\033[1A" // Move up a line
 	s += "\033[K"  // Clear the line
@@ -374,18 +375,23 @@ func (l *List) fmtClear(n int) string {
 	return strings.Repeat(s, n)
 }
 
+// clear clears the previous task states using
+// ANSII escape characters
+func (l *List) clear(states []*TaskState) {
+	n := len(states)
+	s := l.fmtClear(n)
+	fmt.Fprintln(l.Writer, s)
+}
+
+// clearThenPrint is a shorcut that clears the previous
+// task states and prints the current task states.
+//
+// It is equivalent to calling `clear` and `print`
+// except that it only uses one call to `fmt.Fprintln`.
 func (l *List) clearThenPrint(states []*TaskState) {
 	c := l.fmtClear(len(states))
 	s := l.fmtPrint(states)
 	fmt.Fprintln(l.Writer, c+s)
-}
-
-// print prints the current task states
-func (l *List) clear(states []*TaskState) {
-	n := len(states)
-	s := l.fmtClear(n)
-	fmt.Fprint(l.Writer, "*", s)
-	os.Stdout.Sync()
 }
 
 // Println prints information to the List's Writer (which is
