@@ -178,12 +178,66 @@ func TestListReturnErrors(t *testing.T) {
 	}
 }
 
-func TestList_Println(t *testing.T) {
+func TestListPrints(t *testing.T) {
 	l := NewList()
 	l.Writer = &bytes.Buffer{}
 	l.AddTask(NewTask("t0", func(c TaskContext) error {
 		c.Println("hello")
 		c.Printfln("number: %d", 123)
+		return nil
+	}))
+	l.RunAndWait()
+}
+
+func TestListSkipRemaining(t *testing.T) {
+	l := NewList()
+	l.Writer = &bytes.Buffer{}
+	l.FailOnError = true
+
+	var t0Ran bool
+	var t1Ran bool
+	var t2Ran bool
+
+	l.AddTask(NewTask("t0", func(c TaskContext) error {
+		t0Ran = true
+		return nil
+	}))
+	l.AddTask(NewTask("t1", func(c TaskContext) error {
+		t1Ran = true
+		return errors.New("oh no")
+	}))
+	l.AddTask(NewTask("t2", func(c TaskContext) error {
+		t2Ran = true
+		return nil
+	}))
+	l.RunAndWait()
+
+	if !t0Ran {
+		t.Error("t0 should have run")
+	}
+	if !t1Ran {
+		t.Error("t1 should have run")
+	}
+	if t2Ran {
+		t.Error("t2 should have been skipped")
+	}
+}
+
+func TestListTruncate(t *testing.T) {
+	l := NewList()
+	l.Writer = &bytes.Buffer{}
+	l.MaxLineLength = 25
+	l.AddTask(NewTask("this should be cutoff because it's too long", func(c TaskContext) error {
+		return nil
+	}))
+	l.RunAndWait()
+}
+
+func TestListTruncate2(t *testing.T) {
+	l := NewList()
+	l.Writer = &bytes.Buffer{}
+	l.MaxLineLength = 1
+	l.AddTask(NewTask("Nothing should show here", func(c TaskContext) error {
 		return nil
 	}))
 	l.RunAndWait()
