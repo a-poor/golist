@@ -100,14 +100,6 @@ func (t *Task) SetStatus(s TaskStatus) {
 	t.status = s
 }
 
-func (t *Task) GetDepth() int {
-	return 1
-}
-
-func (t Task) GetSize() int {
-	return 1
-}
-
 func (t *Task) GetTaskStates() []*TaskState {
 	return []*TaskState{{
 		Message: t.Message,

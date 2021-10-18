@@ -67,3 +67,52 @@ func TestNewTask_RunNotStarted(t *testing.T) {
 		t.Fatalf("expected task err to be <nil> but was: %s", task.err)
 	}
 }
+
+func TestTask_SkipRun(t *testing.T) {
+	k := &Task{
+		Message: "test",
+		Action: func(c TaskContext) error {
+			t.Error("task wasn't successfully skipped")
+			return nil
+		},
+		Skip: func(c TaskContext) bool {
+			return true
+		},
+	}
+	k.Run(&taskContext{})
+}
+
+func TestTask_NilAction(t *testing.T) {
+	k := &Task{
+		Message: "test",
+		Action:  nil,
+	}
+	err := k.Run(&taskContext{})
+	if err == nil {
+		t.Error("expected nil action error")
+	}
+	if err != nil && err != ErrNilAction {
+		t.Errorf("expected err = %q, got %q", ErrNilAction, err)
+	}
+}
+
+func TestTask_SetMessage(t *testing.T) {
+	orgMsg := "original"
+	newMsg := "new"
+	k := &Task{
+		Message: orgMsg,
+		Action:  nil,
+	}
+	k.SetMessage(newMsg)
+	if k.Message == orgMsg {
+		t.Error("task message unchanged")
+		return
+	}
+	if k.Message != newMsg {
+		t.Errorf("task message expected %q, got %q", newMsg, k.Message)
+	}
+}
+
+func TestTask_createContext(t *testing.T) {
+
+}
