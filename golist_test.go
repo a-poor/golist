@@ -162,3 +162,29 @@ func TestList_createRootContext(t *testing.T) {
 	c.Println("")
 	c.Printfln("")
 }
+
+func TestListReturnErrors(t *testing.T) {
+	l := NewList()
+	l.Writer = &bytes.Buffer{}
+
+	expect := errors.New("oh no")
+	l.AddTask(NewTask("t0", func(c TaskContext) error {
+		return expect
+	}))
+
+	got := l.RunAndWait()
+	if errors.Unwrap(got) != expect {
+		t.Errorf("expected error %q, got %q", expect, got)
+	}
+}
+
+func TestList_Println(t *testing.T) {
+	l := NewList()
+	l.Writer = &bytes.Buffer{}
+	l.AddTask(NewTask("t0", func(c TaskContext) error {
+		c.Println("hello")
+		c.Printfln("number: %d", 123)
+		return nil
+	}))
+	l.RunAndWait()
+}
