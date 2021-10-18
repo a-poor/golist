@@ -277,11 +277,8 @@ func (l *List) Stop() {
 func (l *List) RunAndWait() error {
 	l.Start()
 	err := l.Run()
-	if err != nil {
-		return err
-	}
 	l.Stop()
-	return nil
+	return err
 }
 
 // getTaskStates returns a slice of TaskStates
