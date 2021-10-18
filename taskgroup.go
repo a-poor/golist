@@ -62,6 +62,7 @@ func (tg *TaskGroup) runAsync(c TaskContext) error {
 			t.Run(c)
 		}(t)
 	}
+	wg.Wait()
 	return tg.GetError()
 }
 
