@@ -16,18 +16,19 @@ A terminal task-list tool for Go. Inspired by the Node package [listr](https://w
 
 Check out the documentation [here](https://a-poor.github.io/golist)! _NOTE: The docs site is slightly out of date since some cool new features have been added! Check out this README for updated info and then check back with the docs later!_
 
-In a rush? Check out the [Example](##Example) and the [FAQs](##FAQ)
+In a rush? Check out the [Examples](##Example) and the [FAQs](##FAQ)!
 
 ## Features
 * Multi-line updating lists print to the console
 * Status updates live (with spinners while processing)
 * Nested task groups
+* Optionally run tasks concurrently
 * Check if tasks should be skipped or should fail
 * Safely print to stdout while the list is being displayed
 * Update the task's message while running
 * Truncate text output
 * Optionally expand/collapse a task-group's subtasks when not running
-* Task-groups can skip remaining tasks if failed
+* Optionally skip remaining tasks if one fails in a list or sub-group
 
 ## Installation
 
@@ -37,7 +38,7 @@ go get github.com/a-poor/golist
 
 ## Dependencies
 
-Just the standard library!
+* [Go-MultiError](https://github.com/hashicorp/go-multierror)
 
 ## Example
 
@@ -186,16 +187,6 @@ list.Stop()
 ```
 
 ## FAQ
-
-* Multi-line updating lists print to the console
-* Status updates live (with spinners while processing)
-* Nested task groups
-* Check if tasks should be skipped or should fail
-* Safely print to stdout while the list is being displayed
-* Update the task's message while running
-* Truncate text output
-* Optionally expand/collapse a task-group's subtasks when not running
-* Task-groups can skip remaining tasks if failed
 
 _How do I create a new list?_
 
