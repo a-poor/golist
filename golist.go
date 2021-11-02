@@ -83,9 +83,10 @@ type List struct {
 	ClearOnComplete bool             // If true, the list will clear the list after it finishes running
 	Concurrent      bool             // Should the tasks be run concurrently? Note: If true, ignores the FailOnError flag
 
-	running bool               // Is the list running?
-	cancel  context.CancelFunc // A context cancel function for stopping the list run
-	printQ  chan string        // A channel for printing to the terminal while displaying the list
+	printDone chan bool          // Is the printing loop done
+	running   bool               // Is the list running?
+	cancel    context.CancelFunc // A context cancel function for stopping the list run
+	printQ    chan string        // A channel for printing to the terminal while displaying the list
 }
 
 // NewList creates a new task list with some sensible defaults.
@@ -140,11 +141,31 @@ func (l *List) Start() {
 	// Create the channel for printing
 	l.printQ = make(chan string)
 
+	// Create a channel to tel the Stop function when the
+	// print loop has completed
+	l.printDone = make(chan bool)
+	donePrinting := func() {
+		l.printDone <- true
+	}
+
 	// Start the display loop
 	go func() {
+		defer donePrinting() // Tell the Stop function that we're done printing
+		ts := l.getTaskStates()
+		l.print(ts)
 		for {
 			select {
 			case <-ctx.Done(): // Check if the print loop should stop
+
+				// Perform a final clear and an optional print
+				// depending on `ClearOnComplete`
+				ts := l.getTaskStates()
+				if l.ClearOnComplete {
+					l.clear(ts)
+					return
+				}
+
+				l.clearThenPrint(ts)
 				return
 
 			case s := <-l.printQ: // Check if there's a message to print
@@ -152,10 +173,9 @@ func (l *List) Start() {
 
 			default: // Otherwise, print the list
 				ts := l.getTaskStates()
-				l.print(ts)
+				l.clearThenPrint(ts)
 				l.StatusIndicator.Next()
-				time.Sleep(time.Millisecond * 100)
-				l.clear(ts)
+				time.Sleep(l.Delay)
 			}
 		}
 	}()
@@ -252,15 +272,12 @@ func (l *List) Stop() {
 	if l.cancel != nil {
 		l.cancel()
 	}
+
+	// Wait for the print loop to finish
+	<-l.printDone
+
 	if l.printQ != nil {
 		close(l.printQ)
-	}
-
-	// Clear and print one final time (NOTE: should this be an option?)
-	ts := l.getTaskStates()
-	l.clear(ts)
-	if !l.ClearOnComplete {
-		l.print(ts)
 	}
 
 	l.running = false
@@ -334,23 +351,48 @@ func (l *List) formatMessage(m *TaskState) string {
 	return fmt.Sprintf("%s%s %s", d, i, l.truncateMessage(m.Message, size))
 }
 
-// print prints the current task states
-func (l *List) print(states []*TaskState) {
-	for _, m := range states {
-		fmt.Fprintln(l.Writer, l.formatMessage(m))
+// fmtPrint returns the formatted list of messages
+// and statuses, using the supplied TaskStates
+func (l *List) fmtPrint(ts []*TaskState) string {
+	s := make([]string, 0)
+	for _, t := range ts {
+		s = append(s, l.formatMessage(t))
 	}
+	return strings.Join(s, "\n")
 }
 
 // print prints the current task states
-func (l *List) clear(states []*TaskState) {
-	n := len(states)
+func (l *List) print(states []*TaskState) {
+	s := l.fmtPrint(states)
+	fmt.Fprintln(l.Writer, s)
+}
+
+// fmtClear returns a string of ANSI escape characters
+// to clear the `n` lines previously printed.
+func (l *List) fmtClear(n int) string {
 	s := "\033[1A" // Move up a line
 	s += "\033[K"  // Clear the line
 	s += "\r"      // Move back to the beginning of the line
+	return strings.Repeat(s, n)
+}
 
-	for i := 0; i < n; i++ {
-		fmt.Fprint(l.Writer, s)
-	}
+// clear clears the previous task states using
+// ANSII escape characters
+func (l *List) clear(states []*TaskState) {
+	n := len(states)
+	s := l.fmtClear(n)
+	fmt.Fprintln(l.Writer, s)
+}
+
+// clearThenPrint is a shorcut that clears the previous
+// task states and prints the current task states.
+//
+// It is equivalent to calling `clear` and `print`
+// except that it only uses one call to `fmt.Fprintln`.
+func (l *List) clearThenPrint(states []*TaskState) {
+	c := l.fmtClear(len(states))
+	s := l.fmtPrint(states)
+	fmt.Fprintln(l.Writer, c+s)
 }
 
 // Println prints information to the List's Writer (which is
