@@ -272,12 +272,13 @@ func (l *List) Stop() {
 	if l.cancel != nil {
 		l.cancel()
 	}
-	if l.printQ != nil {
-		close(l.printQ)
-	}
 
 	// Wait for the print loop to finish
 	<-l.printDone
+
+	if l.printQ != nil {
+		close(l.printQ)
+	}
 
 	l.running = false
 	l.cancel = nil
