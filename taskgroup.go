@@ -17,6 +17,8 @@ type TaskGroup struct {
 	Concurrent              bool                   // Should the tasks be run concurrently?
 
 	status TaskStatus // The status of the task
+
+	lock sync.RWMutex
 }
 
 // NewTaskGroup creates a new TaskGroup
@@ -31,6 +33,8 @@ func NewTaskGroup(m string, ts []TaskRunner) *TaskGroup {
 // AddTask adds a TaskRunner to this TaskGroup's tasks
 // and returns a pointer to itself.
 func (tg *TaskGroup) AddTask(t TaskRunner) *TaskGroup {
+	tg.lock.Lock()
+	defer tg.lock.Unlock()
 	tg.Tasks = append(tg.Tasks, t)
 	return tg
 }
@@ -117,7 +121,16 @@ func (t *TaskGroup) createContext(parentContext TaskContext) TaskContext {
 
 // SetMessage sets the display message for this TaskGroup
 func (tg *TaskGroup) SetMessage(m string) {
+	tg.lock.Lock()
+	defer tg.lock.Unlock()
 	tg.Message = m
+}
+
+// SetMessage sets the display message for this TaskGroup
+func (tg *TaskGroup) GetMessage() string {
+	tg.lock.RLock()
+	defer tg.lock.RUnlock()
+	return tg.Message
 }
 
 // GetError returns this TaskGroup's errors, if any
@@ -131,11 +144,15 @@ func (tg *TaskGroup) GetError() error {
 
 // GetStatus returns this TaskGroup's TaskStatus
 func (tg *TaskGroup) GetStatus() TaskStatus {
+	tg.lock.RLock()
+	defer tg.lock.RUnlock()
 	return tg.status
 }
 
 // GetStatus sets this TaskGroup's TaskStatus
 func (tg *TaskGroup) SetStatus(s TaskStatus) {
+	tg.lock.Lock()
+	defer tg.lock.Unlock()
 	tg.status = s
 }
 
@@ -147,7 +164,7 @@ func (tg *TaskGroup) SetStatus(s TaskStatus) {
 func (tg *TaskGroup) GetTaskStates() []*TaskState {
 	messages := []*TaskState{{
 		Status:  tg.GetStatus(),
-		Message: tg.Message,
+		Message: tg.GetMessage(),
 	}}
 	if !tg.HideTasksWhenNotRunning || tg.GetStatus() == TaskInProgress {
 		for _, t := range tg.Tasks {

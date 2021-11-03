@@ -4,6 +4,7 @@ package golist
 // of tasks to be run.
 type TaskRunner interface {
 	Run(TaskContext) error       // Run the task and return any error
+	GetMessage() string          // Get the task's message
 	SetMessage(string)           // Set the task's message
 	GetStatus() TaskStatus       // Get the task's status
 	SetStatus(TaskStatus)        // Set the task's status

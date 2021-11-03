@@ -1,5 +1,7 @@
 package golist
 
+import "sync"
+
 type TaskState struct {
 	Message string
 	Status  TaskStatus
@@ -15,6 +17,8 @@ type Task struct {
 
 	status TaskStatus // The status of the task
 	err    error      // The error returned by the task function
+
+	lock sync.RWMutex
 }
 
 // NewTask creates a new Task with the message `m`
@@ -33,15 +37,16 @@ func (t *Task) Run(parentContext TaskContext) error {
 
 	// Check if the task should be skipped
 	if t.Skip != nil && t.Skip(c) {
-		t.status = TaskSkipped
+		t.SetStatus(TaskSkipped)
 		return nil
 	}
 
 	// Check that an action function exists
 	if t.Action == nil {
+		t.SetStatus(TaskFailed)
 		t.status = TaskFailed
-		t.err = ErrNilAction
-		return t.err
+		t.SetError(ErrNilAction)
+		return ErrNilAction
 	}
 
 	// Set the status to in-progress and run
@@ -77,26 +82,43 @@ func (t *Task) createContext(parentContext TaskContext) TaskContext {
 
 // SetMessage sets the Task's message text
 func (t *Task) SetMessage(m string) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.Message = m
+}
+
+// GetMessage returns Task's message text
+func (t *Task) GetMessage() string {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	return t.Message
 }
 
 // SetError sets the Task's error value
 func (t *Task) SetError(err error) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.err = err
 }
 
 // GetError returns Task's error value, if there is one
 func (t *Task) GetError() error {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	return t.err
 }
 
 // GetStatus returns the Task's status
 func (t *Task) GetStatus() TaskStatus {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	return t.status
 }
 
 // SetStatus sets the Task's status
 func (t *Task) SetStatus(s TaskStatus) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.status = s
 }
 
@@ -104,7 +126,7 @@ func (t *Task) SetStatus(s TaskStatus) {
 // of the current task
 func (t *Task) GetTaskStates() []*TaskState {
 	return []*TaskState{{
-		Message: t.Message,
-		Status:  t.status,
+		Message: t.GetMessage(),
+		Status:  t.GetStatus(),
 	}}
 }

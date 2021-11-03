@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
@@ -123,15 +124,21 @@ func TestList_runAsync(t *testing.T) {
 	l.Concurrent = true
 	l.Writer = &bytes.Buffer{}
 
+	var lock0 sync.Mutex
 	var t0Start bool
+	var lock1 sync.Mutex
 	var t0Stop bool
 
 	l.AddTask(&Task{
 		Message: "t0",
 		Action: func(c TaskContext) error {
+			lock0.Lock()
 			t0Start = true
+			lock0.Unlock()
 			time.Sleep(time.Millisecond * 100)
+			lock1.Lock()
 			t0Stop = true
+			lock1.Unlock()
 			return nil
 		},
 	})
@@ -194,24 +201,34 @@ func TestListSkipRemaining(t *testing.T) {
 	l.Writer = &bytes.Buffer{}
 	l.FailOnError = true
 
+	var lock0 sync.Mutex
 	var t0Ran bool
+
+	var lock1 sync.Mutex
 	var t1Ran bool
+
+	var lock2 sync.Mutex
 	var t2Ran bool
 
 	l.AddTask(NewTask("t0", func(c TaskContext) error {
+		lock0.Lock()
+		defer lock0.Unlock()
 		t0Ran = true
 		return nil
 	}))
 	l.AddTask(NewTask("t1", func(c TaskContext) error {
+		lock1.Lock()
+		defer lock1.Unlock()
 		t1Ran = true
 		return errors.New("oh no")
 	}))
 	l.AddTask(NewTask("t2", func(c TaskContext) error {
+		lock2.Lock()
+		defer lock2.Unlock()
 		t2Ran = true
 		return nil
 	}))
-	l.Start()
-	l.runSync(l.createRootContext())
+	l.RunAndWait()
 
 	if !t0Ran {
 		t.Error("t0 should have run")

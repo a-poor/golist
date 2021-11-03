@@ -87,6 +87,8 @@ type List struct {
 	running   bool               // Is the list running?
 	cancel    context.CancelFunc // A context cancel function for stopping the list run
 	printQ    chan string        // A channel for printing to the terminal while displaying the list
+
+	writeLock sync.Mutex
 }
 
 // NewList creates a new task list with some sensible defaults.
@@ -125,9 +127,11 @@ func (l *List) AddTask(t TaskRunner) *List {
 // Note: If the list is created without a writer,
 // it will be set to `os.Stdout`.
 func (l *List) Start() {
+	l.writeLock.Lock()
 	if l.Writer == nil {
 		l.Writer = os.Stdout
 	}
+	l.writeLock.Unlock()
 
 	// Check if it's already displaying
 	if l.running {
@@ -148,40 +152,50 @@ func (l *List) Start() {
 		l.printDone <- true
 	}
 
+	// Set the running flag
+	l.running = true
+
 	// Start the display loop
 	go func() {
 		defer donePrinting() // Tell the Stop function that we're done printing
 		ts := l.getTaskStates()
 		l.print(ts)
+		nLinesToClear := len(ts)
 		for {
 			select {
 			case <-ctx.Done(): // Check if the print loop should stop
 
 				// Perform a final clear and an optional print
 				// depending on `ClearOnComplete`
-				ts := l.getTaskStates()
+				l.clear(nLinesToClear)
 				if l.ClearOnComplete {
-					l.clear(ts)
 					return
 				}
 
-				l.clearThenPrint(ts)
+				ts := l.getTaskStates()
+				l.print(ts)
 				return
 
 			case s := <-l.printQ: // Check if there's a message to print
+				l.clear(nLinesToClear)
+				nLinesToClear = 0
+				l.writeLock.Lock()
 				fmt.Fprintln(l.Writer, s)
+				l.writeLock.Unlock()
 
-			default: // Otherwise, print the list
+			default:
+				l.clear(nLinesToClear)
+
 				ts := l.getTaskStates()
-				l.clearThenPrint(ts)
+				l.print(ts)
 				l.StatusIndicator.Next()
+
+				nLinesToClear = len(ts)
+
 				time.Sleep(l.Delay)
 			}
 		}
 	}()
-
-	// Set the running flag
-	l.running = true
 }
 
 // createRootContext creates a base TaskContext to be passed
@@ -282,6 +296,7 @@ func (l *List) Stop() {
 	l.running = false
 	l.cancel = nil
 	l.printQ = nil
+
 }
 
 // RunAndWait starts to display the task list statuses,
@@ -377,10 +392,9 @@ func (l *List) fmtClear(n int) string {
 
 // clear clears the previous task states using
 // ANSII escape characters
-func (l *List) clear(states []*TaskState) {
-	n := len(states)
+func (l *List) clear(n int) {
 	s := l.fmtClear(n)
-	fmt.Fprintln(l.Writer, s)
+	fmt.Fprint(l.Writer, s)
 }
 
 // clearThenPrint is a shorcut that clears the previous
